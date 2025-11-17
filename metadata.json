@@ -1,0 +1,5 @@
+{
+  "name": "Stitch AI",
+  "description": "An AI-powered UI design and code generation tool. Describe your desired interface in plain English, and Stitch AI will generate the HTML and Tailwind CSS code, providing a live preview instantly.",
+  "requestFramePermissions": []
+}
