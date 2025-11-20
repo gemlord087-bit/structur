@@ -5,14 +5,11 @@ Stitch AI is an intelligent UI design assistant that transforms natural language
 ## Features
 
 - **AI-Powered Generation**: Utilizes `gemini-3-pro-preview` to interpret complex design prompts and generate high-quality code.
-- **Platform Selection**: Toggle between **Web** and **Mobile** contexts to tailor the design output.
 - **Instant Preview**: Render generated code immediately in a secure sandbox.
-- **Responsive Viewports**:
-  - **Web Mode**: Switch between Desktop, Tablet, and Mobile breakpoints.
-  - **Mobile Mode**: optimized full-height mobile view.
+- **Responsive Testing**:
+  - Toggle between **Desktop**, **Tablet**, and **Mobile** breakpoints to visualize responsiveness.
 - **Code Inspector**:
-  - View generated source code in a macOS-style terminal window.
-  - Syntax highlighting powered by PrismJS.
+  - View generated source code in a clean, macOS-style terminal window.
   - One-click copy functionality.
 - **Modern Tech Stack**: Automatically includes Tailwind CSS for styling and Lucide Icons for vector graphics.
 
@@ -22,17 +19,15 @@ Stitch AI is an intelligent UI design assistant that transforms natural language
 - **AI Model**: Google Gemini API (`@google/genai`)
 - **Styling**: Tailwind CSS (via CDN for generated content)
 - **Icons**: Lucide Icons
-- **Syntax Highlighting**: PrismJS
 
 ## Usage
 
-1. **Configure Platform**: Select "Web" or "Mobile" at the top of the prompt panel.
-2. **Describe Your UI**: Enter a detailed description of the interface you want to build (e.g., "A SaaS landing page with a hero section, pricing table, and testimonial grid").
-3. **Generate**: Click the "Generate UI" button or press `Cmd/Ctrl + Enter`.
-4. **Preview & Test**:
+1. **Describe Your UI**: Enter a detailed description of the interface you want to build (e.g., "A SaaS landing page with a hero section, pricing table, and testimonial grid").
+2. **Generate**: Click the "Generate UI" button or press `Cmd/Ctrl + Enter`.
+3. **Preview & Test**:
    - Use the **Preview** tab to interact with the result.
-   - Use the viewport controls (Desktop/Tablet/Mobile) to test responsiveness (Web mode only).
-5. **Export**: Switch to the **Code** tab to view and copy the raw HTML/CSS.
+   - Use the viewport controls (Desktop/Tablet/Mobile) to test responsiveness.
+4. **Export**: Switch to the **Code** tab to view and copy the raw HTML/CSS.
 
 ## API Configuration
 
