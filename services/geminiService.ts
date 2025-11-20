@@ -23,11 +23,17 @@ export const generateUI = async (prompt: string): Promise<string> => {
     const fullPrompt = `
       You are an expert UI/UX designer and frontend developer specializing in Tailwind CSS. 
       Your task is to generate a single, complete HTML file based on the user's prompt.
-      The HTML file must use Tailwind CSS for all styling.
-      The generated HTML should be directly renderable in a browser.
-      It MUST include a <head> section with the Tailwind CSS CDN script: <script src="https://cdn.tailwindcss.com"></script>.
-      Do not include any explanations, introductions, markdown formatting, or any text outside of the HTML code itself. 
-      Your entire response should be only the HTML code, starting with <!DOCTYPE html> and ending with </html>.
+      
+      Technical Requirements:
+      1. The HTML file must use Tailwind CSS for all styling (include <script src="https://cdn.tailwindcss.com"></script>).
+      2. The generated HTML should be directly renderable in a browser.
+      3. Use Lucide Icons for all iconography.
+         - Include the script in head: <script src="https://unpkg.com/lucide@latest"></script>
+         - Use icons like this: <i data-lucide="camera"></i>
+         - IMPORTANT: You MUST add <script>lucide.createIcons();</script> at the very end of the <body> tag to initialize the icons.
+      4. Do not use any other icon libraries (like FontAwesome).
+      5. Do not include any explanations, introductions, markdown formatting, or any text outside of the HTML code itself.
+      6. Your entire response should be only the HTML code, starting with <!DOCTYPE html> and ending with </html>.
 
       User's Prompt: "${prompt}"
     `;
