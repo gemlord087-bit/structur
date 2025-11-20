@@ -1,191 +1,180 @@
-
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { CodeDisplay } from './CodeDisplay';
 
 interface PreviewWindowProps {
   code: string;
+  isLoading: boolean;
+  error: string | null;
 }
 
-const ZoomInIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+type ViewMode = 'desktop' | 'tablet' | 'mobile';
+type Tab = 'preview' | 'code';
+
+const DesktopIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
 );
 
-const ZoomOutIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+const TabletIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
 );
 
-const ResetIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/></svg>
+const MobileIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
 );
 
-export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code }) => {
-  const [scale, setScale] = useState(0.75);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [startDrag, setStartDrag] = useState({ x: 0, y: 0 });
-  
-  const canvasRef = useRef<HTMLDivElement>(null);
+const EyeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+);
 
-  const resetView = useCallback(() => {
-    if (canvasRef.current) {
-      const canvasRect = canvasRef.current.getBoundingClientRect();
-      const contentWidth = 1280; 
-      const contentHeight = 720;
-      
-      const newScale = Math.min(
-        (canvasRect.width - 80) / contentWidth,
-        (canvasRect.height - 80) / contentHeight
-      );
-      
-      setScale(newScale > 0 ? newScale : 0.1);
-      
-      setPosition({ 
-        x: (canvasRect.width - contentWidth * newScale) / 2, 
-        y: (canvasRect.height - contentHeight * newScale) / 2
-      });
-    }
-  }, []);
+const CodeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+);
 
-  useEffect(() => {
-    const timeoutId = setTimeout(resetView, 50);
-    window.addEventListener('resize', resetView);
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', resetView);
-    };
-  }, [resetView]);
-
-  useEffect(() => {
-    if (code) {
-      resetView();
-    }
-  }, [code, resetView]);
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const { deltaY, clientX, clientY } = e;
-    if (!canvasRef.current) return;
-    
-    const rect = canvasRef.current.getBoundingClientRect();
-    const zoomIntensity = 0.001;
-    const newScale = scale * (1 - deltaY * zoomIntensity);
-    const clampedScale = Math.max(0.1, Math.min(newScale, 4));
-
-    const mouseX = clientX - rect.left;
-    const mouseY = clientY - rect.top;
-    
-    const newX = mouseX - (mouseX - position.x) * (clampedScale / scale);
-    const newY = mouseY - (mouseY - position.y) * (clampedScale / scale);
-
-    setScale(clampedScale);
-    setPosition({ x: newX, y: newY });
-  };
-  
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.target !== canvasRef.current) return;
-    e.preventDefault();
-    setIsDragging(true);
-    setStartDrag({ 
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
-    });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    setPosition({
-      x: e.clientX - startDrag.x,
-      y: e.clientY - startDrag.y
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-  
-  const zoom = (factor: number) => {
-    const newScale = scale * factor;
-    const clampedScale = Math.max(0.1, Math.min(newScale, 4));
-    
-    if (canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-
-      const newX = centerX - (centerX - position.x) * (clampedScale / scale);
-      const newY = centerY - (centerY - position.y) * (clampedScale / scale);
-
-      setScale(clampedScale);
-      setPosition({ x: newX, y: newY });
-    }
-  };
+export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, error }) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('desktop');
+  const [activeTab, setActiveTab] = useState<Tab>('preview');
 
   return (
-    <div className="w-full h-full flex-grow relative overflow-hidden bg-gem-slate/50 select-none">
-      <div
-        ref={canvasRef}
-        className={`w-full h-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, #475569 1px, transparent 0)',
-          backgroundSize: '20px 20px',
-        }}
-        onWheel={code ? handleWheel : undefined}
-        onMouseDown={code ? handleMouseDown : undefined}
-        onMouseMove={code ? handleMouseMove : undefined}
-        onMouseUp={code ? handleMouseUp : undefined}
-        onMouseLeave={code ? handleMouseUp : undefined}
-      >
-        {code ? (
-          <div
-            className="absolute top-0 left-0"
-            style={{ 
-              transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-              transformOrigin: 'top left'
-            }}
+    <div className="flex flex-col h-full w-full bg-gray-50">
+      {/* Toolbar */}
+      <header className="h-14 border-b border-gray-200 bg-white flex items-center justify-between px-4 shrink-0">
+        
+        {/* Left: Mode Toggle */}
+        <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
+          <button
+            onClick={() => setActiveTab('preview')}
+            className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'preview'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+            }`}
           >
-            <div 
-              className="bg-white rounded-md shadow-2xl overflow-hidden ring-1 ring-black/10" 
-              style={{ width: '1280px', height: '720px' }}
+            <EyeIcon />
+            <span>Preview</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('code')}
+            className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeTab === 'code'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+            }`}
+          >
+            <CodeIcon />
+            <span>Code</span>
+          </button>
+        </div>
+
+        {/* Center: Breakpoints (Only visible in Preview mode) */}
+        {activeTab === 'preview' && (
+          <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200 absolute left-1/2 transform -translate-x-1/2">
+            <button
+              onClick={() => setViewMode('desktop')}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === 'desktop' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+              }`}
+              title="Desktop View"
             >
-                <iframe
-                  srcDoc={code}
-                  title="UI Preview"
-                  sandbox="allow-scripts"
-                  className={`w-full h-full border-0 ${isDragging ? 'pointer-events-none' : ''}`}
-                />
-            </div>
-          </div>
-        ) : (
-           <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center text-gem-gray p-8">
-              <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <h3 className="mt-2 text-lg font-medium text-gem-silver">Live Preview Canvas</h3>
-              <p className="mt-1 text-sm">The rendered UI will be displayed here.</p>
-            </div>
+              <DesktopIcon />
+            </button>
+            <button
+              onClick={() => setViewMode('tablet')}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === 'tablet' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+              }`}
+              title="Tablet View"
+            >
+              <TabletIcon />
+            </button>
+            <button
+              onClick={() => setViewMode('mobile')}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === 'mobile' 
+                  ? 'bg-white text-blue-600 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+              }`}
+              title="Mobile View"
+            >
+              <MobileIcon />
+            </button>
           </div>
         )}
-      </div>
 
-      <div className="absolute bottom-4 right-4 bg-gem-onyx/80 backdrop-blur-sm rounded-lg p-1 flex items-center space-x-1 text-gem-silver text-sm border border-gem-gray/50 shadow-lg">
-        <button onClick={() => zoom(0.8)} className="p-2 hover:bg-gem-slate rounded-md transition-colors" title="Zoom Out">
-          <ZoomOutIcon />
-        </button>
-        <div 
-          onClick={resetView} 
-          className="w-16 text-center tabular-nums cursor-pointer hover:bg-gem-slate rounded-md py-2"
-          title="Reset View"
-        >
-          {Math.round(scale * 100)}%
-        </div>
-        <button onClick={() => zoom(1.25)} className="p-2 hover:bg-gem-slate rounded-md transition-colors" title="Zoom In">
-          <ZoomInIcon />
-        </button>
-        <div className="w-px h-5 bg-gem-gray/50 mx-1"></div>
-        <button onClick={resetView} className="p-2 hover:bg-gem-slate rounded-md transition-colors" title="Fit to screen">
-          <ResetIcon />
-        </button>
+        {/* Right spacer for balance */}
+        <div className="w-[120px]"></div> 
+      </header>
+
+      {/* Content Area */}
+      <div className="flex-grow relative overflow-hidden flex flex-col">
+        {activeTab === 'preview' ? (
+          <div className="flex-grow relative overflow-hidden flex items-center justify-center bg-gray-100 p-4">
+            {/* Background pattern */}
+            <div 
+              className="absolute inset-0 opacity-[0.03] pointer-events-none"
+              style={{
+                backgroundImage: 'radial-gradient(circle at 1px 1px, #000 1px, transparent 0)',
+                backgroundSize: '20px 20px',
+              }}
+            />
+            
+            {/* Loading State Overlay for Preview */}
+            {isLoading && (
+               <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                  <p className="text-gray-500 font-medium animate-pulse">Generating your UI...</p>
+               </div>
+            )}
+
+            {code && !isLoading ? (
+              <div 
+                className={`
+                  transition-all duration-500 ease-in-out bg-white shadow-xl relative
+                  ${viewMode === 'desktop' ? 'w-full h-full rounded-none shadow-none' : ''}
+                  ${viewMode === 'tablet' ? 'w-[768px] h-[95%] rounded-xl border-[8px] border-gray-800' : ''}
+                  ${viewMode === 'mobile' ? 'w-[375px] h-[90%] rounded-[2rem] border-[10px] border-gray-800' : ''}
+                `}
+              >
+                <iframe
+                  srcDoc={code}
+                  title="Preview"
+                  className="w-full h-full bg-white"
+                  sandbox="allow-scripts"
+                  style={{ 
+                    borderRadius: viewMode === 'desktop' ? '0' : 'inherit' 
+                  }}
+                />
+              </div>
+            ) : (
+              !isLoading && (
+                <div className="text-center text-gray-400">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-200/50 mb-4">
+                    <DesktopIcon />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-700">Ready to preview</h3>
+                  <p className="mt-2 text-sm text-gray-500 max-w-sm mx-auto">
+                    Generate some UI code to see it rendered here. You can switch between device sizes using the toolbar above.
+                  </p>
+                </div>
+              )
+            )}
+             {error && !isLoading && (
+                <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/90 p-8">
+                    <div className="text-red-500 text-center max-w-lg bg-red-50 p-6 rounded-xl border border-red-100">
+                        <p className="font-bold text-xl mb-2">Generation Error</p>
+                        <p>{error}</p>
+                    </div>
+                </div>
+             )}
+          </div>
+        ) : (
+          <div className="flex-grow flex flex-col min-h-0">
+            <CodeDisplay code={code} error={error} isLoading={isLoading} />
+          </div>
+        )}
       </div>
     </div>
   );
