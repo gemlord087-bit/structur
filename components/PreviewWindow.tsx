@@ -37,7 +37,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
   return (
     <div className="flex flex-col h-full w-full bg-gray-50">
       {/* Toolbar */}
-      <header className="h-14 border-b border-gray-200 bg-white flex items-center justify-between px-4 shrink-0">
+      <header className="relative h-14 border-b border-gray-200 bg-white flex items-center justify-between px-4 shrink-0 z-20">
         
         {/* Left: Mode Toggle */}
         <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
@@ -50,7 +50,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
             }`}
           >
             <EyeIcon />
-            <span>Preview</span>
+            <span className="hidden sm:inline">Preview</span>
           </button>
           <button
             onClick={() => setActiveTab('code')}
@@ -61,13 +61,13 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
             }`}
           >
             <CodeIcon />
-            <span>Code</span>
+            <span className="hidden sm:inline">Code</span>
           </button>
         </div>
 
         {/* Center: Breakpoints (Only visible in Preview mode) */}
         {activeTab === 'preview' && (
-          <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200 absolute left-1/2 transform -translate-x-1/2">
+          <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200 md:absolute md:left-1/2 md:transform md:-translate-x-1/2">
             <button
               onClick={() => setViewMode('desktop')}
               className={`p-2 rounded-md transition-all duration-200 ${
@@ -104,8 +104,8 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
           </div>
         )}
 
-        {/* Right spacer for balance */}
-        <div className="w-[120px]"></div> 
+        {/* Right spacer for balance (desktop only) */}
+        <div className="hidden md:block w-[120px]"></div> 
       </header>
 
       {/* Content Area */}
@@ -133,9 +133,9 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
               <div 
                 className={`
                   transition-all duration-500 ease-in-out bg-white shadow-xl relative
-                  ${viewMode === 'desktop' ? 'w-full h-full rounded-none shadow-none' : ''}
-                  ${viewMode === 'tablet' ? 'w-[768px] h-[95%] rounded-xl border-[8px] border-gray-800' : ''}
-                  ${viewMode === 'mobile' ? 'w-[375px] h-[90%] rounded-[2rem] border-[10px] border-gray-800' : ''}
+                  ${viewMode === 'desktop' ? 'w-full h-full shadow-none' : ''}
+                  ${viewMode === 'tablet' ? 'w-[768px] max-w-full h-[95%]' : ''}
+                  ${viewMode === 'mobile' ? 'w-[375px] max-w-full h-[90%]' : ''}
                 `}
               >
                 <iframe
@@ -143,20 +143,17 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
                   title="Preview"
                   className="w-full h-full bg-white"
                   sandbox="allow-scripts"
-                  style={{ 
-                    borderRadius: viewMode === 'desktop' ? '0' : 'inherit' 
-                  }}
                 />
               </div>
             ) : (
               !isLoading && (
-                <div className="text-center text-gray-400">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-200/50 mb-4">
+                <div className="text-center text-gray-400 p-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200/50 mb-4">
                     <DesktopIcon />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-700">Ready to preview</h3>
-                  <p className="mt-2 text-sm text-gray-500 max-w-sm mx-auto">
-                    Generate some UI code to see it rendered here. You can switch between device sizes using the toolbar above.
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-700">Ready to preview</h3>
+                  <p className="mt-2 text-xs sm:text-sm text-gray-500 max-w-sm mx-auto">
+                    Generate some UI code to see it rendered here. Switch between device sizes using the toolbar.
                   </p>
                 </div>
               )

@@ -32,11 +32,11 @@ const App: React.FC = () => {
   }, [prompt]);
   
   return (
-    <main className="bg-white text-gray-900 h-screen w-screen overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-3 h-full font-sans">
+    <main className="bg-white text-gray-900 h-[100dvh] w-screen overflow-hidden">
+      <div className="flex flex-col lg:grid lg:grid-cols-3 h-full font-sans">
         
         {/* Left Panel: Prompt Input */}
-        <div className="lg:col-span-1 bg-white flex flex-col h-full border-r border-gray-200 shadow-sm z-10">
+        <div className="lg:col-span-1 bg-white flex flex-col border-b lg:border-b-0 lg:border-r border-gray-200 shadow-sm z-10 shrink-0 max-h-[45vh] lg:max-h-full lg:h-full">
           <header className="p-4 border-b border-gray-200 flex items-center space-x-3 shrink-0">
             <LogoIcon />
             <h1 className="text-xl font-bold text-gray-900">Stitch AI</h1>
@@ -53,7 +53,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Right Panel: Preview & Code */}
-        <div className="lg:col-span-2 bg-gray-50 flex flex-col h-full relative overflow-hidden">
+        <div className="lg:col-span-2 bg-gray-50 flex flex-col flex-grow h-full relative overflow-hidden min-h-0">
           <PreviewWindow 
             code={generatedCode} 
             isLoading={isLoading} 
