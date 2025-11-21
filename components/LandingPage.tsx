@@ -49,7 +49,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPr
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden relative">
+      <section className="pt-32 pb-20 md:pt-40 md:pb-24 overflow-hidden relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
             <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl mix-blend-multiply animate-blob"></div>
             <div className="absolute top-20 right-20 w-72 h-72 bg-purple-400/10 rounded-full blur-3xl mix-blend-multiply animate-blob animation-delay-2000"></div>
@@ -62,23 +62,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPr
             Powered by Gemini 3 Pro
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
-            Turn your ideas into <br/>
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+            Build stunning UIs <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-              User Interfaces
-            </span> instantly.
+              in seconds.
+            </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Stitch AI writes the HTML & Tailwind CSS for you. Describe your dream app, and we'll build the interface in seconds.
+          <p className="text-lg md:text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Stitch AI converts your text prompts into production-ready HTML & Tailwind CSS. No coding required to start.
           </p>
           
           {/* Hero Prompt Input */}
-          <div className="max-w-2xl mx-auto mb-16 relative z-20">
+          <div className="max-w-3xl mx-auto mb-20 relative z-20">
               <form onSubmit={handleHeroSubmit} className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-200"></div>
                   <div className="relative flex items-center bg-white rounded-xl shadow-xl p-2 border border-gray-200">
-                    <div className="pl-4 text-gray-400">
+                    <div className="pl-6 text-gray-400">
                         <MagicWandIcon />
                     </div>
                     <input 
@@ -86,49 +86,90 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPr
                         value={heroPrompt}
                         onChange={(e) => setHeroPrompt(e.target.value)}
                         placeholder="Describe an app (e.g. 'A crypto dashboard')" 
-                        className="flex-1 p-4 bg-transparent text-lg text-gray-900 placeholder-gray-400 focus:outline-none"
+                        className="flex-1 p-6 bg-transparent text-xl text-gray-900 placeholder-gray-400 focus:outline-none"
                     />
                     <button 
                         type="submit"
-                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 shrink-0"
+                        className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 shrink-0 mr-2"
                     >
                         Generate
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                     </button>
                   </div>
               </form>
           </div>
 
           {/* Examples Grid */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto px-4">
+             {/* Example 1 */}
+             <div className="group relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white">
+                <img 
+                    src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                    alt="Analytics Dashboard" 
+                    className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6">
+                    <span className="text-white font-bold text-lg">Analytics Dashboards</span>
+                </div>
+             </div>
+
+             {/* Example 2 */}
+             <div className="group relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white lg:-mt-12">
+                <img 
+                    src="https://images.unsplash.com/photo-1605902711834-8b11c3e3ef2f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                    alt="Mobile App" 
+                    className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6">
+                    <span className="text-white font-bold text-lg">Mobile Applications</span>
+                </div>
+             </div>
+
+             {/* Example 3 */}
+             <div className="group relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white">
+                <img 
+                    src="https://images.unsplash.com/photo-1481487484168-9b930d5b7d89?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                    alt="SaaS Landing Page" 
+                    className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6">
+                    <span className="text-white font-bold text-lg">SaaS Landing Pages</span>
+                </div>
+             </div>
+
+             {/* Example 4 */}
              <div className="group relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white">
                 <img 
                     src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                    alt="Analytics Dashboard" 
-                    className="w-full h-48 object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                    alt="Fintech Dashboard" 
+                    className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                    <span className="text-white font-bold text-sm">Analytics Dashboards</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6">
+                    <span className="text-white font-bold text-lg">Fintech & Crypto</span>
                 </div>
              </div>
-             <div className="group relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white md:-mt-8">
+
+             {/* Example 5 */}
+             <div className="group relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white lg:-mt-12">
                 <img 
-                    src="https://images.unsplash.com/photo-1555421689-492a6c3a3730?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                    alt="E-commerce UI" 
-                    className="w-full h-48 object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                    src="https://images.unsplash.com/photo-1522542550221-31fd19575a2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                    alt="Profile & Portfolio" 
+                    className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                    <span className="text-white font-bold text-sm">E-commerce Stores</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6">
+                    <span className="text-white font-bold text-lg">Portfolios & Profiles</span>
                 </div>
              </div>
+
+             {/* Example 6 */}
              <div className="group relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-white">
                 <img 
-                    src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                    alt="Mobile App Design" 
-                    className="w-full h-48 object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                    src="https://images.unsplash.com/photo-1555421689-3f034debb7a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                    alt="E-commerce" 
+                    className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                    <span className="text-white font-bold text-sm">Mobile Applications</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6">
+                    <span className="text-white font-bold text-lg">E-commerce Stores</span>
                 </div>
              </div>
           </div>

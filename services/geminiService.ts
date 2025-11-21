@@ -36,6 +36,7 @@ const MOBILE_RULES = `
   4. FIXED ELEMENTS: If using fixed positioning (like bottom nav), ensure it stays within the mobile container. 
      - Use: 'fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50'.
   5. PADDING: Add 'pb-24' to the main content to prevent it from hiding behind the bottom nav.
+  6. NAVIGATION STYLE: The bottom navigation bar must be FLAT with uniform items. Do NOT use raised, floating, or circular center buttons. All icons should be aligned similarly in a standard tab bar layout.
 `;
 
 const WEB_RULES = `
@@ -169,7 +170,7 @@ ${f.content}
       3. ALWAYS include a brief summary of what you changed in this format: <!-- summary: ... -->
       4. In the summary, refer to screens by their readable names (e.g., "Home Page"), not filenames.
       5. Do not skip sections of code; return full files.
-      ${platform === 'mobile' ? '6. Ensure mobile navigation rules (max-w-md, fixed centered nav) are strictly applied.' : ''}
+      ${platform === 'mobile' ? '6. Ensure mobile navigation rules (max-w-md, fixed centered nav, FLAT design) are strictly applied.' : ''}
     `;
     
     const response = await ai.models.generateContent({
