@@ -50,9 +50,17 @@ const DownloadIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
 );
 
+const ChevronDownIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+);
+
 export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, error, platform }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const [activeTab, setActiveTab] = useState<Tab>('preview'); // Default to preview
+  
+  // Export Dropdown State
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
   
   // Canvas State
   const containerRef = useRef<HTMLDivElement>(null);
@@ -75,6 +83,19 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
         setMaxHeight(1080);
     }
   }, [platform]);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
+        setIsExportOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [exportRef]);
 
   // Calculate scale to fit content within container
   const fitToScreen = () => {
@@ -299,7 +320,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
         )}
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative" ref={exportRef}>
              {isLoading && (
                  <div className="flex items-center gap-2 text-xs text-blue-600 animate-pulse font-medium mr-4">
                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
@@ -308,13 +329,33 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
              )}
              
              <button 
-                onClick={downloadZip}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setIsExportOpen(!isExportOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
              >
-                 <DownloadIcon />
-                 <span className="hidden sm:inline">Download Code</span>
-                 <span className="text-xs text-gray-400 ml-1 font-mono bg-gray-800 px-1.5 rounded">.ZIP</span>
+                 <span className="hidden sm:inline">Export</span>
+                 <ChevronDownIcon />
              </button>
+
+             {/* Export Dropdown */}
+             {isExportOpen && (
+                <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 origin-top-right animate-in fade-in zoom-in-95 duration-100">
+                    <button
+                        onClick={() => {
+                            downloadZip();
+                            setIsExportOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                    >
+                        <div className="p-1.5 bg-gray-100 rounded-md text-gray-600">
+                            <DownloadIcon />
+                        </div>
+                        <div>
+                            <div className="font-medium">Download Code</div>
+                            <div className="text-xs text-gray-500">Save as .ZIP archive</div>
+                        </div>
+                    </button>
+                </div>
+             )}
         </div> 
       </header>
 

@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isRefining, setIsRefining] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<'chat' | 'preview'>('preview');
 
   // Initial Project
   const defaultProject: Project = {
@@ -649,6 +650,7 @@ const App: React.FC = () => {
     setActiveProjectId(project.id);
     setView('project');
     setError(null);
+    setMobileTab('preview'); // Reset to default tab on mobile
   };
 
   const goToDashboard = () => {
@@ -675,8 +677,34 @@ const App: React.FC = () => {
   // Project View
   return (
     <main className="h-[100dvh] w-screen flex flex-col md:grid md:grid-cols-12 bg-gray-50 overflow-hidden font-sans">
+        {/* Mobile Tab Navigation */}
+        <div className="md:hidden flex items-center border-b border-gray-200 bg-white shrink-0 z-20">
+            <button 
+                onClick={goToDashboard}
+                className="p-3 text-gray-500 hover:bg-gray-100 border-r border-gray-100"
+                title="Back to Dashboard"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <button 
+                onClick={() => setMobileTab('preview')}
+                className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${mobileTab === 'preview' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+                Preview
+            </button>
+            <button 
+                onClick={() => setMobileTab('chat')}
+                className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${mobileTab === 'chat' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-gray-500 hover:bg-gray-50'}`}
+            >
+                Chat & Settings
+            </button>
+        </div>
+
         {/* Left: Chat Interface */}
-        <div className="md:col-span-3 lg:col-span-3 h-[40vh] md:h-full z-10 border-r border-gray-200 shadow-xl">
+        <div className={`
+            md:col-span-3 lg:col-span-3 z-10 border-r border-gray-200 shadow-xl bg-white
+            ${mobileTab === 'chat' ? 'flex-1 flex flex-col min-h-0' : 'hidden md:flex md:flex-col md:h-full'}
+        `}>
            {activeProject && (
              <ChatInterface 
                 projectName={activeProject.name}
@@ -690,7 +718,10 @@ const App: React.FC = () => {
         </div>
 
         {/* Right: Preview Window */}
-        <div className="md:col-span-9 lg:col-span-9 h-[60vh] md:h-full relative min-h-0">
+        <div className={`
+            md:col-span-9 lg:col-span-9 relative min-h-0 bg-gray-50
+            ${mobileTab === 'preview' ? 'flex-1 flex flex-col' : 'hidden md:flex md:flex-col md:h-full'}
+        `}>
            {activeProject && (
              <PreviewWindow 
                 files={activeProject.files}
