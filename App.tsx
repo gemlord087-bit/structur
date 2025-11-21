@@ -1,12 +1,13 @@
+
 import React, { useState, useCallback } from 'react';
 import { PromptInput } from './components/PromptInput';
 import { PreviewWindow } from './components/PreviewWindow';
 import { generateUI } from './services/geminiService';
-import { LogoIcon } from './constants';
+import { LogoIcon, DEFAULT_CODE } from './constants';
 
 const App: React.FC = () => {
   const [prompt, setPrompt] = useState<string>('');
-  const [generatedCode, setGeneratedCode] = useState<string>('');
+  const [generatedCode, setGeneratedCode] = useState<string>(DEFAULT_CODE);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
