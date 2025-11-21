@@ -465,16 +465,16 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
             />
 
             {/* Scroll Container - Use flex layout with margin:auto on children to safely center content while allowing scroll */}
-            <div className="absolute inset-0 overflow-x-auto overflow-y-hidden flex">
-                 <div className="flex gap-10 m-auto px-10 py-3 h-full items-center">
+            <div className="absolute inset-0 overflow-auto flex">
+                 <div className="flex gap-10 m-auto p-10 items-center min-h-min">
                      {files.map((file, idx) => (
                          <div 
                             key={idx}
                             className={`
                             transition-all duration-500 ease-in-out bg-white shadow-xl flex-shrink-0 flex flex-col overflow-hidden
-                            ${viewMode === 'desktop' ? 'w-[1200px] h-full shadow-none rounded-none border border-gray-200' : 'rounded-2xl shadow-2xl border border-gray-100'}
-                            ${viewMode === 'tablet' ? 'w-[768px] h-[95%]' : ''}
-                            ${viewMode === 'mobile' ? 'w-[375px] h-full max-h-[844px]' : ''}
+                            ${viewMode === 'desktop' ? 'w-[1200px] h-[900px] shadow-none rounded-none border border-gray-200' : 'rounded-2xl shadow-2xl border border-gray-100'}
+                            ${viewMode === 'tablet' ? 'w-[768px] h-[1024px]' : ''}
+                            ${viewMode === 'mobile' ? 'w-[375px] h-[812px]' : ''}
                             `}
                         >
                             <iframe
