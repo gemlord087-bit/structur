@@ -71,7 +71,13 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
+  
+  // Design Positioning State
+  const [filePositions, setFilePositions] = useState<{[key: string]: {x: number, y: number}}>({});
+  const [draggingFile, setDraggingFile] = useState<string | null>(null);
+  const [isCanvasDragging, setIsCanvasDragging] = useState(false);
+  
+  // Track drag start positions
   const dragStart = useRef({ x: 0, y: 0 });
   
   // We track the max height of all screens to fit them
@@ -100,21 +106,55 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
     };
   }, [exportRef]);
 
+  // Initialize file positions when files change
+  useEffect(() => {
+    const isMobile = platform === 'mobile';
+    const width = isMobile ? 375 : 1200;
+    const gap = 60;
+    
+    setFilePositions(prev => {
+        const newPositions = { ...prev };
+        let hasChanges = false;
+        
+        files.forEach((file, index) => {
+            if (!newPositions[file.name]) {
+                newPositions[file.name] = {
+                    x: index * (width + gap),
+                    y: 100 // Start with some top padding
+                };
+                hasChanges = true;
+            }
+        });
+        
+        return hasChanges ? newPositions : prev;
+    });
+  }, [files, platform]);
+
   // Calculate scale to fit content within container
   const fitToScreen = () => {
-    if (containerRef.current) {
+    if (containerRef.current && Object.keys(filePositions).length > 0) {
         const { clientWidth: containerW, clientHeight: containerH } = containerRef.current;
         
         const isMobile = platform === 'mobile';
-        const screenWidth = isMobile ? 375 : 1200; // Updated desktop width
-        const screenHeight = maxHeight;
-        const gap = 40;
+        const width = isMobile ? 375 : 1200;
+        const height = isMobile ? 812 : maxHeight;
         
-        const contentW = isMobile 
-            ? (files.length * screenWidth) + ((files.length - 1) * gap) 
-            : screenWidth;
-            
-        const contentH = screenHeight;
+        // Calculate bounding box
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        
+        files.forEach(f => {
+            const pos = filePositions[f.name] || {x:0, y:0};
+            minX = Math.min(minX, pos.x);
+            maxX = Math.max(maxX, pos.x + width);
+            minY = Math.min(minY, pos.y);
+            maxY = Math.max(maxY, pos.y + height);
+        });
+        
+        // If no valid bounds (e.g. no files), return
+        if (minX === Infinity) return;
+
+        const contentW = maxX - minX;
+        const contentH = maxY - minY;
         
         const padding = 60;
         const availableW = containerW - padding;
@@ -127,24 +167,20 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
         
         setZoom(newZoom);
         
-        // Center the content
-        const scaledW = contentW * newZoom;
-        const scaledH = contentH * newZoom;
-        
+        // Center the content bounding box in the container
         setPan({
-            x: (containerW - scaledW) / 2,
-            y: (containerH - scaledH) / 2
+            x: (containerW - contentW * newZoom) / 2 - minX * newZoom,
+            y: (containerH - contentH * newZoom) / 2 - minY * newZoom
         });
     }
   };
 
-  // Trigger fit when file count or platform changes, but only initially or on manual trigger
+  // Trigger fit initially
   useEffect(() => {
       if (activeTab === 'canvas' && files.length > 0) {
-          // Small delay to let heights render
           setTimeout(fitToScreen, 100);
       }
-  }, [activeTab, platform, files.length]);
+  }, [activeTab, platform, files.length]); // Re-run if these change
 
   // --- Helper to fix h-screen in canvas mode ---
   const prepareCanvasContent = (content: string) => {
@@ -172,27 +208,62 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
       return modified.replace('</head>', `${styleInjection}</head>`);
   };
 
-  // --- Mouse Event Handlers for Pan/Zoom ---
+  // --- Mouse Event Handlers for Pan/Zoom/Drag ---
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
       if (activeTab !== 'canvas') return;
-      // Always start dragging on mouse down in canvas mode
+      // Start panning the canvas
       e.preventDefault();
-      setIsDragging(true);
+      setIsCanvasDragging(true);
       dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+  };
+  
+  const handleDesignMouseDown = (e: React.MouseEvent, fileName: string) => {
+      if (activeTab !== 'canvas') return;
+      e.stopPropagation(); // Prevent canvas pan
+      e.preventDefault();
+      
+      setDraggingFile(fileName);
+      // Store raw mouse position
+      dragStart.current = { x: e.clientX, y: e.clientY }; 
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-      if (!isDragging || activeTab !== 'canvas') return;
-      e.preventDefault();
-      setPan({
-          x: e.clientX - dragStart.current.x,
-          y: e.clientY - dragStart.current.y
-      });
+      if (activeTab !== 'canvas') return;
+
+      // 1. Dragging a specific design
+      if (draggingFile) {
+          e.preventDefault();
+          // Calculate delta, adjusting for zoom level
+          const deltaX = (e.clientX - dragStart.current.x) / zoom;
+          const deltaY = (e.clientY - dragStart.current.y) / zoom;
+          
+          // Update drag start for next frame
+          dragStart.current = { x: e.clientX, y: e.clientY };
+
+          setFilePositions(prev => ({
+              ...prev,
+              [draggingFile]: {
+                  x: (prev[draggingFile]?.x || 0) + deltaX,
+                  y: (prev[draggingFile]?.y || 0) + deltaY
+              }
+          }));
+          return;
+      }
+
+      // 2. Panning the Canvas
+      if (isCanvasDragging) {
+          e.preventDefault();
+          setPan({
+              x: e.clientX - dragStart.current.x,
+              y: e.clientY - dragStart.current.y
+          });
+      }
   };
 
   const handleMouseUp = () => {
-      setIsDragging(false);
+      setIsCanvasDragging(false);
+      setDraggingFile(null);
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -360,9 +431,9 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
       <div className="flex-grow relative overflow-hidden flex flex-col" id="preview-container">
         {activeTab === 'canvas' ? (
              <div 
-                className="flex-grow relative overflow-hidden bg-gray-200 cursor-grab active:cursor-grabbing"
+                className={`flex-grow relative overflow-hidden bg-gray-200 ${isCanvasDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 ref={containerRef}
-                onMouseDown={handleMouseDown}
+                onMouseDown={handleCanvasMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
@@ -400,22 +471,29 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
                         style={{
                             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                             transformOrigin: '0 0',
-                            display: 'flex',
-                            gap: '40px', // Gap between screens
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
                         }}
-                        className="absolute top-0 left-0 transition-transform duration-75 will-change-transform p-10"
+                        className="will-change-transform transition-transform duration-75"
                     >
                          {files.map((file, idx) => {
+                             const pos = filePositions[file.name] || { x: 0, y: 0 };
                              return (
                                 <div 
                                     key={idx}
                                     style={{
-                                        width: isMobile ? '375px' : '1200px', // 1200px for canvas desktop reference too
-                                        height: isMobile ? '812px' : `${maxHeight}px`, 
+                                        position: 'absolute',
+                                        left: pos.x,
+                                        top: pos.y,
+                                        width: isMobile ? '375px' : '1200px', 
+                                        height: isMobile ? '812px' : `${maxHeight}px`,
+                                        zIndex: draggingFile === file.name ? 50 : 10,
                                     }}
-                                    className="bg-white shadow-2xl overflow-hidden flex-shrink-0 select-none relative ring-1 ring-gray-300"
+                                    onMouseDown={(e) => handleDesignMouseDown(e, file.name)}
+                                    className="bg-white shadow-2xl overflow-hidden select-none ring-1 ring-gray-300 cursor-move"
                                 >
-                                    {/* Transparent overlay to consume clicks */}
+                                    {/* Transparent overlay to consume clicks & show drag cursor */}
                                     <div className="absolute inset-0 z-10 bg-transparent" />
                                     
                                     <iframe
