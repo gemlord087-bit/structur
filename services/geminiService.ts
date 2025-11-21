@@ -8,7 +8,7 @@ interface GenerationResponse {
   projectName?: string;
 }
 
-const SYSTEM_PROMPT = `
+const BASE_SYSTEM_PROMPT = `
   You are an expert UI/UX designer and frontend developer specializing in Tailwind CSS. 
   Your task is to generate HTML files based on the user's prompt.
   
@@ -22,6 +22,13 @@ const SYSTEM_PROMPT = `
      - Provide a short, creative project name using this comment delimiter: <!-- project_name: Project Name -->
   6. Return ONLY the raw code. Do not use markdown code blocks.
 
+  Summary Rules:
+  1. Always include a summary using <!-- summary: ... -->.
+  2. In the summary, refer to screens by their functionality (e.g., "Home Screen", "Profile Page", "Settings View") rather than their filenames (e.g., do NOT say "index.html" or "settings.html"). 
+  3. Example Good Summary: "I have created a modern Home Screen with a hero section and added a new Settings Page with toggle controls."
+`;
+
+const MOBILE_RULES = `
   Mobile Design Rules (Crucial):
   1. Mobile designs MUST look like a mobile app even on desktop. 
   2. WRAPPER: Wrap the entire app content inside a div with classes: 'max-w-md mx-auto min-h-screen bg-[your-bg-color] relative shadow-2xl overflow-hidden'.
@@ -29,11 +36,14 @@ const SYSTEM_PROMPT = `
   4. FIXED ELEMENTS: If using fixed positioning (like bottom nav), ensure it stays within the mobile container. 
      - Use: 'fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50'.
   5. PADDING: Add 'pb-24' to the main content to prevent it from hiding behind the bottom nav.
+`;
 
-  Summary Rules:
-  1. Always include a summary using <!-- summary: ... -->.
-  2. In the summary, refer to screens by their functionality (e.g., "Home Screen", "Profile Page", "Settings View") rather than their filenames (e.g., do NOT say "index.html" or "settings.html"). 
-  3. Example Good Summary: "I have created a modern Home Screen with a hero section and added a new Settings Page with toggle controls."
+const WEB_RULES = `
+  Web Design Rules:
+  1. Generate a responsive, full-width web application.
+  2. Use semantic HTML tags (header, main, footer, section).
+  3. Ensure the layout is responsive using Tailwind's breakpoint prefixes (sm:, md:, lg:, xl:).
+  4. Do NOT wrap the body in a restricted width container unless specifically asked for a boxed layout. The app should take up the full viewport width and be mobile-responsive.
 `;
 
 const cleanResponse = (text: string): string => {
@@ -91,12 +101,10 @@ export const generateUI = async (prompt: string, platform: 'web' | 'mobile'): Pr
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    const platformInstruction = platform === 'mobile' 
-        ? `Generate a Mobile App UI. The design should be constrained to a mobile width (max-w-md). Include a fixed bottom navigation if it's a full app.` 
-        : `Generate a responsive Single Page Web Application.`;
+    const platformInstruction = platform === 'mobile' ? MOBILE_RULES : WEB_RULES;
 
     const fullPrompt = `
-      ${SYSTEM_PROMPT}
+      ${BASE_SYSTEM_PROMPT}
       
       ${platformInstruction}
 
@@ -139,8 +147,12 @@ export const refineUI = async (currentFiles: GeneratedFile[], userPrompt: string
 ${f.content}
     `).join('\n');
 
+    const platformInstruction = platform === 'mobile' ? MOBILE_RULES : WEB_RULES;
+
     const fullPrompt = `
-      ${SYSTEM_PROMPT}
+      ${BASE_SYSTEM_PROMPT}
+      
+      ${platformInstruction}
 
       CONTEXT:
       The user wants to modify an existing ${platform} project.
@@ -157,7 +169,7 @@ ${f.content}
       3. ALWAYS include a brief summary of what you changed in this format: <!-- summary: ... -->
       4. In the summary, refer to screens by their readable names (e.g., "Home Page"), not filenames.
       5. Do not skip sections of code; return full files.
-      6. Ensure mobile navigation rules (max-w-md, fixed centered nav) are strictly applied.
+      ${platform === 'mobile' ? '6. Ensure mobile navigation rules (max-w-md, fixed centered nav) are strictly applied.' : ''}
     `;
     
     const response = await ai.models.generateContent({

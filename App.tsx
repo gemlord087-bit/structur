@@ -3,6 +3,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { PreviewWindow } from './components/PreviewWindow';
 import { ChatInterface } from './components/ChatInterface';
+import { LandingPage } from './components/LandingPage';
+import { PrivacyPolicy, TermsOfService } from './components/LegalPages';
 import { generateUI, refineUI } from './services/geminiService';
 import { loadProjects, saveProject, deleteProject } from './services/db';
 import { DEFAULT_FILES } from './constants';
@@ -10,7 +12,7 @@ import { Project, View, Message } from './types';
 
 const App: React.FC = () => {
   // State
-  const [view, setView] = useState<View>('dashboard');
+  const [view, setView] = useState<View>('landing');
   const [prompt, setPrompt] = useState<string>('');
   const [activeProjectId, setActiveProjectId] = useState<string | null>('default');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -653,13 +655,34 @@ const App: React.FC = () => {
     setMobileTab('preview'); // Reset to default tab on mobile
   };
 
-  const goToDashboard = () => {
+  const goToDashboard = (initialPrompt?: string) => {
+    if (initialPrompt) {
+        setPrompt(initialPrompt);
+    }
     setView('dashboard');
     setActiveProjectId(null);
     setError(null);
   };
 
   // --- Render ---
+
+  if (view === 'landing') {
+    return (
+      <LandingPage 
+        onGetStarted={goToDashboard} 
+        onViewPrivacy={() => setView('privacy')}
+        onViewTerms={() => setView('terms')}
+      />
+    );
+  }
+
+  if (view === 'privacy') {
+    return <PrivacyPolicy onBack={() => setView('landing')} />;
+  }
+
+  if (view === 'terms') {
+    return <TermsOfService onBack={() => setView('landing')} />;
+  }
 
   if (view === 'dashboard') {
     return (
@@ -680,7 +703,7 @@ const App: React.FC = () => {
         {/* Mobile Tab Navigation */}
         <div className="md:hidden flex items-center border-b border-gray-200 bg-white shrink-0 z-20">
             <button 
-                onClick={goToDashboard}
+                onClick={() => goToDashboard()}
                 className="p-3 text-gray-500 hover:bg-gray-100 border-r border-gray-100"
                 title="Back to Dashboard"
             >
@@ -722,7 +745,7 @@ const App: React.FC = () => {
                     isLoading={isRefining}
                     projectName={activeProject.name}
                     onRenameProject={handleRenameProject}
-                    onBack={goToDashboard}
+                    onBack={() => goToDashboard()}
                 />
             )}
         </section>

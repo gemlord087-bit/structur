@@ -21,4 +21,4 @@ export interface Project {
   messages: Message[];
 }
 
-export type View = 'dashboard' | 'project';
+export type View = 'landing' | 'dashboard' | 'project' | 'privacy' | 'terms';

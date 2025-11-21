@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { CodeDisplay } from './CodeDisplay';
 import { GeneratedFile } from '../types';
 import JSZip from 'jszip';
@@ -131,7 +131,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
   }, [files, platform]);
 
   // Calculate scale to fit content within container
-  const fitToScreen = () => {
+  const fitToScreen = useCallback(() => {
     if (containerRef.current && Object.keys(filePositions).length > 0) {
         const { clientWidth: containerW, clientHeight: containerH } = containerRef.current;
         
@@ -173,14 +173,14 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
             y: (containerH - contentH * newZoom) / 2 - minY * newZoom
         });
     }
-  };
+  }, [filePositions, files, platform, maxHeight]);
 
-  // Trigger fit initially
+  // Trigger fit initially when positions are ready
   useEffect(() => {
-      if (activeTab === 'canvas' && files.length > 0) {
-          setTimeout(fitToScreen, 100);
+      if (activeTab === 'canvas' && Object.keys(filePositions).length > 0) {
+          requestAnimationFrame(() => fitToScreen());
       }
-  }, [activeTab, platform, files.length]); // Re-run if these change
+  }, [activeTab, fitToScreen, filePositions]);
 
   // --- Helper to fix h-screen in canvas mode ---
   const prepareCanvasContent = (content: string) => {
