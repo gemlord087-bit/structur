@@ -14,6 +14,10 @@ interface PreviewWindowProps {
 type ViewMode = 'desktop' | 'tablet' | 'mobile';
 type Tab = 'preview' | 'canvas' | 'code';
 
+const CanvasIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+);
+
 const DesktopIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
 );
@@ -56,7 +60,7 @@ const ChevronDownIcon = () => (
 
 export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, error, platform }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
-  const [activeTab, setActiveTab] = useState<Tab>('preview'); // Default to preview
+  const [activeTab, setActiveTab] = useState<Tab>('canvas');
   
   // Export Dropdown State
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -242,8 +246,6 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
         
         {/* Left: Mode Toggle */}
         <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
-          {/* Canvas Button Hidden for now */}
-          {/*
           <button
             onClick={() => setActiveTab('canvas')}
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
@@ -255,7 +257,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
             <CanvasIcon />
             <span className="hidden sm:inline">Canvas</span>
           </button>
-          */}
+
           <button
             onClick={() => setActiveTab('preview')}
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
@@ -464,7 +466,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
 
             {/* Scroll Container - Use flex layout with margin:auto on children to safely center content while allowing scroll */}
             <div className="absolute inset-0 overflow-x-auto overflow-y-hidden flex">
-                 <div className="flex gap-10 m-auto px-10 py-10 h-full items-center">
+                 <div className="flex gap-10 m-auto px-10 py-3 h-full items-center">
                      {files.map((file, idx) => (
                          <div 
                             key={idx}
