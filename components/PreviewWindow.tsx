@@ -117,6 +117,32 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
       }
   }, [activeTab, platform]);
 
+  // --- Helper to fix h-screen in canvas mode ---
+  // Since the iframe expands to full height, h-screen would make the hero section huge.
+  // We replace h-screen with a fixed pixel height suitable for the platform.
+  const prepareCanvasContent = (content: string) => {
+      const isMobile = platform === 'mobile';
+      const fallbackHeight = isMobile ? 'min-h-[800px]' : 'min-h-[900px]';
+      
+      // Replace h-screen with a fixed min-height
+      let modified = content.replace(/h-screen/g, fallbackHeight);
+      
+      // Also replace arbitrary vh units with px if possible (simple regex)
+      // This is a basic heuristic
+      modified = modified.replace(/h-\[100vh\]/g, fallbackHeight);
+
+      // Inject style to hide scrollbars and ensure body takes height
+      const styleInjection = `
+        <style>
+            ::-webkit-scrollbar { display: none; }
+            body { overflow: hidden; }
+            html, body { min-height: 100%; height: auto; }
+        </style>
+      `;
+      
+      return modified.replace('</head>', `${styleInjection}</head>`);
+  };
+
   // --- Mouse Event Handlers for Pan/Zoom ---
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -301,22 +327,22 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
                             display: 'flex',
                             gap: '40px', // Gap between screens
                         }}
-                        className="absolute top-0 left-0 pointer-events-none select-none transition-transform duration-75 will-change-transform p-10"
+                        className="absolute top-0 left-0 transition-transform duration-75 will-change-transform p-10"
                     >
                          {files.map((file, idx) => (
                              <div 
                                 key={idx}
                                 style={{
                                     width: isMobile ? '375px' : '1280px',
-                                    height: isMobile ? '812px' : `${maxHeight}px`, // Fixed height for mobile in canvas
+                                    height: isMobile ? '812px' : `${maxHeight}px`, 
                                 }}
-                                className="bg-white shadow-2xl overflow-hidden flex-shrink-0"
+                                className="bg-white shadow-2xl overflow-hidden flex-shrink-0 pointer-events-none select-none"
                              >
                                 {/* Removed header with filename as requested */}
                                 <iframe
-                                    srcDoc={file.content}
+                                    srcDoc={prepareCanvasContent(file.content)}
                                     title={file.name}
-                                    className="w-full h-full border-0"
+                                    className="w-full h-full border-0 block"
                                     scrolling="no"
                                     onLoad={(e) => {
                                         // For web, try to get content height to resize
