@@ -5,6 +5,7 @@ import { GeneratedFile } from "../types";
 interface GenerationResponse {
   files: GeneratedFile[];
   summary?: string;
+  projectName?: string;
 }
 
 const SYSTEM_PROMPT = `
@@ -16,12 +17,18 @@ const SYSTEM_PROMPT = `
   2. Use Lucide Icons. Include <script src="https://unpkg.com/lucide@latest"></script> in head and <script>lucide.createIcons();</script> at the end of body.
   3. IMPORTANT: Use Unsplash source URLs for images (e.g., https://images.unsplash.com/photo-...) or placeholder services. DO NOT use local file paths or base64 data URIs.
   4. Keep the code clean and concise but functional.
-  5. FORMATTING: Separate multiple files using this comment delimiter EXACTLY: <!-- filename: filename.html -->
+  5. FORMATTING: 
+     - Separate multiple files using this comment delimiter EXACTLY: <!-- filename: filename.html -->
+     - Provide a short, creative project name using this comment delimiter: <!-- project_name: Project Name -->
   6. Return ONLY the raw code. Do not use markdown code blocks.
 
   Mobile Design Rules (Crucial):
-  1. If the design needs a bottom navigation bar, it MUST use 'fixed bottom-0 left-0 w-full z-50'.
-  2. You MUST add sufficient bottom padding (e.g., 'pb-20' or 'pb-24') to the main content wrapper or body so the content is not hidden behind the fixed bottom nav.
+  1. Mobile designs MUST look like a mobile app even on desktop. 
+  2. WRAPPER: Wrap the entire app content inside a div with classes: 'max-w-md mx-auto min-h-screen bg-[your-bg-color] relative shadow-2xl overflow-hidden'.
+  3. BODY: Set the <body> background to a neutral color (e.g., bg-gray-100 or bg-gray-900) to contrast with the app container.
+  4. FIXED ELEMENTS: If using fixed positioning (like bottom nav), ensure it stays within the mobile container. 
+     - Use: 'fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50'.
+  5. PADDING: Add 'pb-24' to the main content to prevent it from hiding behind the bottom nav.
 
   Summary Rules:
   1. Always include a summary using <!-- summary: ... -->.
@@ -39,22 +46,28 @@ const cleanResponse = (text: string): string => {
 const parseResponse = (text: string): GenerationResponse => {
   const cleanedCode = cleanResponse(text);
   
+  // Extract Project Name
+  const nameRegex = /<!-- project_name: (.*?) -->/;
+  const nameMatch = cleanedCode.match(nameRegex);
+  const projectName = nameMatch ? nameMatch[1].trim() : undefined;
+
   // Extract Summary if present
   const summaryRegex = /<!-- summary: (.*?) -->/s;
   const summaryMatch = cleanedCode.match(summaryRegex);
   const summary = summaryMatch ? summaryMatch[1].trim() : undefined;
 
-  // Remove summary from code to avoid duplication in file content if it was placed outside
-  const codeWithoutSummary = cleanedCode.replace(summaryRegex, '');
+  // Remove metadata from code to avoid duplication in file content
+  let codeContent = cleanedCode.replace(nameRegex, '').replace(summaryRegex, '');
 
   const delimiterRegex = /<!-- filename: (.*?) -->/g;
-  const parts = codeWithoutSummary.split(delimiterRegex);
+  const parts = codeContent.split(delimiterRegex);
   
   // If no delimiters found, assume it's a single index.html
   if (parts.length === 1) {
       return { 
-          files: [{ name: 'index.html', content: codeWithoutSummary.trim() }],
-          summary 
+          files: [{ name: 'index.html', content: codeContent.trim() }],
+          summary,
+          projectName
       };
   }
 
@@ -67,7 +80,7 @@ const parseResponse = (text: string): GenerationResponse => {
           files.push({ name, content });
       }
   }
-  return { files, summary };
+  return { files, summary, projectName };
 };
 
 export const generateUI = async (prompt: string, platform: 'web' | 'mobile'): Promise<GenerationResponse> => {
@@ -79,7 +92,7 @@ export const generateUI = async (prompt: string, platform: 'web' | 'mobile'): Pr
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     const platformInstruction = platform === 'mobile' 
-        ? `Generate a Mobile App UI. The design should be suitable for a mobile screen (375px width). If it's a full app, include a fixed bottom navigation.` 
+        ? `Generate a Mobile App UI. The design should be constrained to a mobile width (max-w-md). Include a fixed bottom navigation if it's a full app.` 
         : `Generate a responsive Single Page Web Application.`;
 
     const fullPrompt = `
@@ -93,6 +106,7 @@ export const generateUI = async (prompt: string, platform: 'web' | 'mobile'): Pr
       - Generate the requested UI. 
       - If multiple screens are needed (e.g., login and home), return multiple files separated by the delimiter.
       - Default to 'index.html' for the main file.
+      - GENERATE A PROJECT NAME based on the prompt.
     `;
     
     const response = await ai.models.generateContent({
@@ -143,7 +157,7 @@ ${f.content}
       3. ALWAYS include a brief summary of what you changed in this format: <!-- summary: ... -->
       4. In the summary, refer to screens by their readable names (e.g., "Home Page"), not filenames.
       5. Do not skip sections of code; return full files.
-      6. Ensure mobile navigation rules are still applied if relevant.
+      6. Ensure mobile navigation rules (max-w-md, fixed centered nav) are strictly applied.
     `;
     
     const response = await ai.models.generateContent({

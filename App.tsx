@@ -510,7 +510,7 @@ const App: React.FC = () => {
       
       const newProject: Project = {
         id: crypto.randomUUID(),
-        name: `New ${platform === 'web' ? 'Web' : 'Mobile'} Interface`, // Default naming
+        name: data.projectName || `New ${platform === 'web' ? 'Web' : 'Mobile'} Interface`, // Use generated name or fallback
         platform: platform,
         createdAt: Date.now(),
         updatedAt: Date.now(),
