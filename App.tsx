@@ -686,51 +686,61 @@ const App: React.FC = () => {
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
             </button>
-            <button 
-                onClick={() => setMobileTab('preview')}
-                className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${mobileTab === 'preview' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-gray-500 hover:bg-gray-50'}`}
-            >
-                Preview
-            </button>
-            <button 
-                onClick={() => setMobileTab('chat')}
-                className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${mobileTab === 'chat' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-gray-500 hover:bg-gray-50'}`}
-            >
-                Chat & Settings
-            </button>
+            <div className="flex flex-1 justify-around">
+                <button 
+                    onClick={() => setMobileTab('chat')}
+                    className={`py-3 px-4 border-b-2 text-sm font-medium transition-colors ${
+                        mobileTab === 'chat' 
+                        ? 'border-blue-600 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                    Chat
+                </button>
+                <button 
+                    onClick={() => setMobileTab('preview')}
+                    className={`py-3 px-4 border-b-2 text-sm font-medium transition-colors ${
+                        mobileTab === 'preview' 
+                        ? 'border-blue-600 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                    Preview
+                </button>
+            </div>
         </div>
 
-        {/* Left: Chat Interface */}
-        <div className={`
-            md:col-span-3 lg:col-span-3 z-10 border-r border-gray-200 shadow-xl bg-white
-            ${mobileTab === 'chat' ? 'flex-1 flex flex-col min-h-0' : 'hidden md:flex md:flex-col md:h-full'}
+        {/* Left Panel: Chat Interface */}
+        <section className={`
+            md:col-span-4 lg:col-span-3 md:flex flex-col h-full
+            ${mobileTab === 'chat' ? 'flex' : 'hidden'}
         `}>
-           {activeProject && (
-             <ChatInterface 
-                projectName={activeProject.name}
-                messages={activeProject.messages}
-                onSendMessage={handleRefineProject}
-                isLoading={isRefining}
-                onRenameProject={handleRenameProject}
-                onBack={goToDashboard}
-             />
-           )}
-        </div>
+            {activeProject && (
+                <ChatInterface 
+                    messages={activeProject.messages}
+                    onSendMessage={handleRefineProject}
+                    isLoading={isRefining}
+                    projectName={activeProject.name}
+                    onRenameProject={handleRenameProject}
+                    onBack={goToDashboard}
+                />
+            )}
+        </section>
 
-        {/* Right: Preview Window */}
-        <div className={`
-            md:col-span-9 lg:col-span-9 relative min-h-0 bg-gray-50
-            ${mobileTab === 'preview' ? 'flex-1 flex flex-col' : 'hidden md:flex md:flex-col md:h-full'}
+        {/* Right Panel: Preview Window */}
+        <section className={`
+            md:col-span-8 lg:col-span-9 bg-gray-100 flex flex-col h-full overflow-hidden
+            ${mobileTab === 'preview' ? 'flex' : 'hidden'}
         `}>
-           {activeProject && (
-             <PreviewWindow 
-                files={activeProject.files}
-                platform={activeProject.platform}
-                isLoading={isRefining} 
-                error={error}
-             />
-           )}
-        </div>
+            {activeProject && (
+                <PreviewWindow 
+                    files={activeProject.files}
+                    isLoading={isRefining}
+                    error={error}
+                    platform={activeProject.platform}
+                />
+            )}
+        </section>
     </main>
   );
 };

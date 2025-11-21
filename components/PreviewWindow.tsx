@@ -470,7 +470,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
                             key={idx}
                             className={`
                             transition-all duration-500 ease-in-out bg-white shadow-xl flex-shrink-0 flex flex-col overflow-hidden
-                            ${viewMode === 'desktop' ? 'w-[calc(100vw-20rem)] md:w-[1200px] h-full shadow-none rounded-none border border-gray-200' : 'rounded-2xl shadow-2xl border border-gray-100'}
+                            ${viewMode === 'desktop' ? 'w-[1200px] h-full shadow-none rounded-none border border-gray-200' : 'rounded-2xl shadow-2xl border border-gray-100'}
                             ${viewMode === 'tablet' ? 'w-[768px] h-[95%]' : ''}
                             ${viewMode === 'mobile' ? 'w-[375px] h-full max-h-[844px]' : ''}
                             `}
