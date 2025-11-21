@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { CodeDisplay } from './CodeDisplay';
 import { GeneratedFile } from '../types';
+import JSZip from 'jszip';
 
 interface PreviewWindowProps {
   files: GeneratedFile[];
@@ -33,10 +34,6 @@ const CodeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
 );
 
-const CanvasIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>
-);
-
 const ZoomInIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
 );
@@ -49,12 +46,17 @@ const FitScreenIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
 );
 
+const DownloadIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+);
+
 export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, error, platform }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
-  const [activeTab, setActiveTab] = useState<Tab>('canvas');
+  const [activeTab, setActiveTab] = useState<Tab>('preview'); // Default to preview
   
   // Canvas State
   const containerRef = useRef<HTMLDivElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -80,7 +82,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
         const { clientWidth: containerW, clientHeight: containerH } = containerRef.current;
         
         const isMobile = platform === 'mobile';
-        const screenWidth = isMobile ? 375 : 1280;
+        const screenWidth = isMobile ? 375 : 1200; // Updated desktop width
         const screenHeight = maxHeight;
         const gap = 40;
         
@@ -192,6 +194,23 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
 
   const handleZoomIn = () => setZoom(z => Math.min(5, z + 0.1));
   const handleZoomOut = () => setZoom(z => Math.max(0.1, z - 0.1));
+  
+  // --- Export Functions ---
+  
+  const downloadZip = async () => {
+      const zip = new JSZip();
+      files.forEach(file => {
+          zip.file(file.name, file.content);
+      });
+      
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "ui-design-files.zip";
+      a.click();
+      URL.revokeObjectURL(url);
+  };
 
   const isMobile = platform === 'mobile';
 
@@ -202,6 +221,8 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
         
         {/* Left: Mode Toggle */}
         <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
+          {/* Canvas Button Hidden for now */}
+          {/*
           <button
             onClick={() => setActiveTab('canvas')}
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
@@ -213,6 +234,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
             <CanvasIcon />
             <span className="hidden sm:inline">Canvas</span>
           </button>
+          */}
           <button
             onClick={() => setActiveTab('preview')}
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
@@ -276,19 +298,28 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
           </div>
         )}
 
-        {/* Right spacer */}
-        <div className="hidden md:block w-[120px]">
+        {/* Right Actions */}
+        <div className="flex items-center gap-3">
              {isLoading && (
-                 <div className="flex items-center justify-end gap-2 text-xs text-blue-600 animate-pulse font-medium">
+                 <div className="flex items-center gap-2 text-xs text-blue-600 animate-pulse font-medium mr-4">
                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                      AI Working...
                  </div>
              )}
+             
+             <button 
+                onClick={downloadZip}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+                 <DownloadIcon />
+                 <span className="hidden sm:inline">Download Code</span>
+                 <span className="text-xs text-gray-400 ml-1 font-mono bg-gray-800 px-1.5 rounded">.ZIP</span>
+             </button>
         </div> 
       </header>
 
       {/* Content Area */}
-      <div className="flex-grow relative overflow-hidden flex flex-col">
+      <div className="flex-grow relative overflow-hidden flex flex-col" id="preview-container">
         {activeTab === 'canvas' ? (
              <div 
                 className="flex-grow relative overflow-hidden bg-gray-200 cursor-grab active:cursor-grabbing"
@@ -342,7 +373,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
                                 <div 
                                     key={idx}
                                     style={{
-                                        width: isMobile ? '375px' : '1280px',
+                                        width: isMobile ? '375px' : '1200px', // 1200px for canvas desktop reference too
                                         height: isMobile ? '812px' : `${maxHeight}px`, 
                                     }}
                                     className={`bg-white shadow-2xl overflow-hidden flex-shrink-0 select-none relative transition-all duration-200 ${
@@ -380,7 +411,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
                 )}
              </div>
         ) : activeTab === 'preview' ? (
-          <div className="flex-grow relative bg-gray-100 overflow-hidden">
+          <div className="flex-grow relative bg-gray-100 overflow-hidden" ref={previewContainerRef}>
              {/* Background pattern */}
              <div 
               className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -398,7 +429,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
                             key={idx}
                             className={`
                             transition-all duration-500 ease-in-out bg-white shadow-xl flex-shrink-0 flex flex-col overflow-hidden
-                            ${viewMode === 'desktop' ? 'w-[calc(100vw-20rem)] md:w-[1280px] h-full shadow-none rounded-none border border-gray-200' : 'rounded-2xl shadow-2xl border border-gray-100'}
+                            ${viewMode === 'desktop' ? 'w-[calc(100vw-20rem)] md:w-[1200px] h-full shadow-none rounded-none border border-gray-200' : 'rounded-2xl shadow-2xl border border-gray-100'}
                             ${viewMode === 'tablet' ? 'w-[768px] h-[95%]' : ''}
                             ${viewMode === 'mobile' ? 'w-[375px] h-full max-h-[844px]' : ''}
                             `}
@@ -432,4 +463,3 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
     </div>
   );
 };
-    

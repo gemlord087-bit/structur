@@ -22,6 +22,11 @@ const SYSTEM_PROMPT = `
   Mobile Design Rules (Crucial):
   1. If the design needs a bottom navigation bar, it MUST use 'fixed bottom-0 left-0 w-full z-50'.
   2. You MUST add sufficient bottom padding (e.g., 'pb-20' or 'pb-24') to the main content wrapper or body so the content is not hidden behind the fixed bottom nav.
+
+  Summary Rules:
+  1. Always include a summary using <!-- summary: ... -->.
+  2. In the summary, refer to screens by their functionality (e.g., "Home Screen", "Profile Page", "Settings View") rather than their filenames (e.g., do NOT say "index.html" or "settings.html"). 
+  3. Example Good Summary: "I have created a modern Home Screen with a hero section and added a new Settings Page with toggle controls."
 `;
 
 const cleanResponse = (text: string): string => {
@@ -135,9 +140,10 @@ ${f.content}
       INSTRUCTIONS:
       1. If editing an existing file, return the FULL updated code for that file with its filename delimiter.
       2. If creating a new screen, return the code for the new file with a new filename delimiter (e.g., <!-- filename: login.html -->).
-      3. ALWAYS include a brief summary of what you changed in this format: <!-- summary: I have updated the color scheme and added a new login screen. -->
-      4. Do not skip sections of code; return full files.
-      5. Ensure mobile navigation rules are still applied if relevant.
+      3. ALWAYS include a brief summary of what you changed in this format: <!-- summary: ... -->
+      4. In the summary, refer to screens by their readable names (e.g., "Home Page"), not filenames.
+      5. Do not skip sections of code; return full files.
+      6. Ensure mobile navigation rules are still applied if relevant.
     `;
     
     const response = await ai.models.generateContent({

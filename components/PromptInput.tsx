@@ -74,7 +74,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({ prompt, setPrompt, onG
           ) : (
             <>
               <MagicWandIcon />
-              Generate Project
+              Generate UI
             </>
           )}
         </button>

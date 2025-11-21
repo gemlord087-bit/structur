@@ -8,6 +8,7 @@ interface ChatInterfaceProps {
   onSendMessage: (content: string) => void;
   isLoading: boolean;
   projectName: string;
+  onRenameProject: (newName: string) => void;
   onBack: () => void;
 }
 
@@ -16,9 +17,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage, 
   isLoading,
   projectName,
+  onRenameProject,
   onBack
 }) => {
   const [input, setInput] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(projectName);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -29,12 +33,31 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+      setTempName(projectName);
+  }, [projectName]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isLoading) {
       onSendMessage(input.trim());
       setInput('');
     }
+  };
+
+  const handleNameBlur = () => {
+      setIsEditingName(false);
+      if (tempName.trim() && tempName !== projectName) {
+          onRenameProject(tempName.trim());
+      } else {
+          setTempName(projectName);
+      }
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+          handleNameBlur();
+      }
   };
 
   return (
@@ -49,14 +72,25 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-bold text-gray-900 truncate">{projectName}</h1>
-          <div className="flex items-center text-xs text-green-600 font-medium">
-            <span className="relative flex h-2 w-2 mr-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            Assistant Active
-          </div>
+          {isEditingName ? (
+              <input 
+                type="text" 
+                value={tempName}
+                onChange={(e) => setTempName(e.target.value)}
+                onBlur={handleNameBlur}
+                onKeyDown={handleNameKeyDown}
+                autoFocus
+                className="w-full text-lg font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none"
+              />
+          ) : (
+             <h1 
+                onClick={() => setIsEditingName(true)}
+                className="text-lg font-bold text-gray-900 truncate cursor-text hover:text-gray-600 transition-colors"
+                title="Click to rename"
+             >
+                 {projectName}
+             </h1>
+          )}
         </div>
       </header>
 
@@ -121,7 +155,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             disabled={!input.trim() || isLoading}
             className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7 7"/><path d="M12 19V5"/></svg>
           </button>
         </form>
       </div>

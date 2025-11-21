@@ -44,10 +44,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="max-w-3xl mx-auto mb-16 space-y-8">
            <div className="text-center space-y-4">
              <h2 className="text-4xl font-extrabold text-gray-900 leading-tight">
-               What do you want to <span className="text-blue-600">build</span> today?
+               Design your <span className="text-blue-600">Interface</span>.
              </h2>
              <p className="text-lg text-gray-600">
-               Describe your UI idea, and we'll generate the code instantly.
+               Describe your desired user interface, and we'll generate the code instantly.
              </p>
            </div>
            
@@ -64,7 +64,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Projects Grid */}
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-900">Your Projects</h3>
+                <h3 className="text-xl font-bold text-gray-900">Your Interfaces</h3>
                 <span className="text-sm text-gray-500">{projects.length} Projects</span>
             </div>
             
@@ -73,7 +73,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div className="text-gray-400 mb-4">
                         <svg className="w-16 h-16 mx-auto opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                     </div>
-                    <p className="text-gray-500 text-lg">No projects yet. Start creating above!</p>
+                    <p className="text-gray-500 text-lg">No interfaces yet. Start creating above!</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
