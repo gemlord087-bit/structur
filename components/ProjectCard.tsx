@@ -15,6 +15,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) =>
     minute: '2-digit'
   });
 
+  const previewContent = project.files.length > 0 ? project.files[0].content : '';
+
   return (
     <div 
       onClick={() => onClick(project)}
@@ -26,7 +28,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) =>
             <div className="absolute inset-0 z-10 bg-transparent"></div>
             <div className="w-[200%] h-[200%] origin-top-left transform scale-50">
                 <iframe 
-                    srcDoc={project.code} 
+                    srcDoc={previewContent} 
                     className="w-full h-full border-0 bg-white"
                     tabIndex={-1}
                     title={`Preview of ${project.name}`}
@@ -39,7 +41,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) =>
             <h3 className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{project.name}</h3>
             <div className="flex justify-between items-center mt-2">
                 <span className="text-xs text-gray-500">{formattedDate}</span>
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">v{project.messages.length + 1}</span>
+                <div className="flex items-center gap-2">
+                     <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full uppercase font-bold">{project.platform}</span>
+                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{project.files.length} Files</span>
+                </div>
             </div>
         </div>
     </div>

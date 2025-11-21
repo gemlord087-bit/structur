@@ -1,11 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { CodeDisplay } from './CodeDisplay';
+import { GeneratedFile } from '../types';
 
 interface PreviewWindowProps {
-  code: string;
+  files: GeneratedFile[];
   isLoading: boolean;
   error: string | null;
+  platform: 'web' | 'mobile';
 }
 
 type ViewMode = 'desktop' | 'tablet' | 'mobile';
@@ -47,25 +49,43 @@ const FitScreenIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
 );
 
-export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, error }) => {
+export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, error, platform }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const [activeTab, setActiveTab] = useState<Tab>('canvas');
   
   // Canvas State
   const containerRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
-  const [iframeHeight, setIframeHeight] = useState(1080);
+  
+  // We track the max height of all screens to fit them
+  const [maxHeight, setMaxHeight] = useState(1080);
+
+  useEffect(() => {
+    if (platform === 'mobile') {
+        setViewMode('mobile');
+    } else {
+        setViewMode('desktop');
+    }
+  }, [platform]);
 
   // Calculate scale to fit content within container
   const fitToScreen = () => {
-    if (containerRef.current && iframeHeight > 0) {
+    if (containerRef.current) {
         const { clientWidth: containerW, clientHeight: containerH } = containerRef.current;
-        const contentW = 1280; // Standard desktop width
-        const contentH = iframeHeight;
+        
+        const isMobile = platform === 'mobile';
+        const screenWidth = isMobile ? 375 : 1280;
+        const screenHeight = maxHeight || (isMobile ? 800 : 1080);
+        const gap = 40;
+        
+        const contentW = isMobile 
+            ? (files.length * screenWidth) + ((files.length - 1) * gap) 
+            : screenWidth;
+            
+        const contentH = screenHeight;
         
         const padding = 60;
         const availableW = containerW - padding;
@@ -74,7 +94,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
         // Calculate scale to fit both dimensions
         const scaleX = availableW / contentW;
         const scaleY = availableH / contentH;
-        const newZoom = Math.min(scaleX, scaleY, 1); // Cap at 100% default
+        const newZoom = Math.min(scaleX, scaleY, 1); 
         
         setZoom(newZoom);
         
@@ -89,35 +109,13 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
     }
   };
 
-  const handleIframeLoad = () => {
-    if (iframeRef.current) {
-        try {
-            // Small timeout to ensure CSS is rendered
-            setTimeout(() => {
-                const doc = iframeRef.current?.contentDocument;
-                if (doc) {
-                    // Set scrolling no to prevent scrollbars inside iframe
-                    doc.body.style.overflow = 'hidden';
-                    const h = doc.body.scrollHeight;
-                    setIframeHeight(h);
-                    
-                    // Initial fit
-                    // We call fitToScreen here, but we need to wait for state update of iframeHeight
-                    // passing h directly to a helper would be better, but state update loop is fine for this interaction speed
-                }
-            }, 100);
-        } catch (e) {
-            console.error("Cannot access iframe content", e);
-        }
-    }
-  };
-
-  // Trigger fit when height updates
+  // Trigger fit when file count or platform changes, but only initially or on manual trigger
   useEffect(() => {
-      if (activeTab === 'canvas' && iframeHeight > 0) {
-          fitToScreen();
+      if (activeTab === 'canvas' && files.length > 0) {
+          // Small delay to let heights render
+          setTimeout(fitToScreen, 100);
       }
-  }, [iframeHeight, activeTab]);
+  }, [activeTab, platform]);
 
   // --- Mouse Event Handlers for Pan/Zoom ---
 
@@ -144,17 +142,13 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
   const handleWheel = (e: React.WheelEvent) => {
       if (activeTab !== 'canvas') return;
       
-      // Check for zoom gesture (Ctrl + Wheel) or if user just wants to scroll vertically
       if (e.ctrlKey || e.metaKey) {
-          // Zoom
           e.preventDefault();
           const zoomSensitivity = 0.001;
           const delta = -e.deltaY * zoomSensitivity;
           const newZoom = Math.max(0.1, Math.min(5, zoom + delta));
           setZoom(newZoom);
       } else {
-          // Pan (Scroll)
-          // e.preventDefault(); // Optional: prevent browser back swipe
           setPan(prev => ({
               x: prev.x - e.deltaX,
               y: prev.y - e.deltaY
@@ -165,6 +159,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
   const handleZoomIn = () => setZoom(z => Math.min(5, z + 0.1));
   const handleZoomOut = () => setZoom(z => Math.max(0.1, z - 0.1));
 
+  const isMobile = platform === 'mobile';
 
   return (
     <div className="flex flex-col h-full w-full bg-gray-50">
@@ -208,8 +203,8 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
           </button>
         </div>
 
-        {/* Center: Breakpoints (Only visible in Preview mode) */}
-        {activeTab === 'preview' && (
+        {/* Center: Breakpoints (Only visible in Preview mode AND Web platform) */}
+        {activeTab === 'preview' && platform === 'web' && (
           <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200 md:absolute md:left-1/2 md:transform md:-translate-x-1/2">
             <button
               onClick={() => setViewMode('desktop')}
@@ -247,8 +242,16 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
           </div>
         )}
 
-        {/* Right spacer for balance (desktop only) */}
-        <div className="hidden md:block w-[120px]"></div> 
+        {/* Right spacer */}
+        <div className="hidden md:block w-[120px]">
+             {/* Show loading indicator here nicely */}
+             {isLoading && (
+                 <div className="flex items-center justify-end gap-2 text-xs text-blue-600 animate-pulse font-medium">
+                     <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                     AI Working...
+                 </div>
+             )}
+        </div> 
       </header>
 
       {/* Content Area */}
@@ -285,95 +288,88 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
                     </button>
                 </div>
                 
-                {/* Current Zoom Level Indicator */}
                 <div className="absolute bottom-6 left-6 bg-white px-3 py-1.5 rounded-md shadow-sm border border-gray-200 text-xs font-mono text-gray-600 z-30 pointer-events-none">
                     {Math.round(zoom * 100)}%
                 </div>
 
-                 {isLoading && (
-                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm pointer-events-none">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                        <p className="text-gray-500 font-medium animate-pulse">Generating your UI...</p>
-                    </div>
-                )}
-
-                {code && !isLoading && (
+                {/* Content Container */}
+                {files.length > 0 && (
                     <div 
                         style={{
                             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                             transformOrigin: '0 0',
-                            width: '1280px', // Fixed desktop width
-                            height: `${iframeHeight}px`,
+                            display: 'flex',
+                            gap: '40px', // Gap between screens
                         }}
-                        className="bg-white shadow-2xl pointer-events-none select-none transition-transform duration-75 will-change-transform"
+                        className="absolute top-0 left-0 pointer-events-none select-none transition-transform duration-75 will-change-transform p-10"
                     >
-                         <iframe
-                            ref={iframeRef}
-                            srcDoc={code}
-                            title="Canvas Preview"
-                            className="w-full h-full border-0"
-                            onLoad={handleIframeLoad}
-                            scrolling="no"
-                        />
-                    </div>
-                )}
-                 {error && !isLoading && (
-                    <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/90 p-8 pointer-events-none">
-                        <div className="text-red-500 text-center max-w-lg bg-red-50 p-6 rounded-xl border border-red-100">
-                            <p className="font-bold text-xl mb-2">Generation Error</p>
-                            <p>{error}</p>
-                        </div>
+                         {files.map((file, idx) => (
+                             <div 
+                                key={idx}
+                                style={{
+                                    width: isMobile ? '375px' : '1280px',
+                                    height: isMobile ? '812px' : `${maxHeight}px`, // Fixed height for mobile in canvas
+                                }}
+                                className="bg-white shadow-2xl overflow-hidden flex-shrink-0"
+                             >
+                                {/* Removed header with filename as requested */}
+                                <iframe
+                                    srcDoc={file.content}
+                                    title={file.name}
+                                    className="w-full h-full border-0"
+                                    scrolling="no"
+                                    onLoad={(e) => {
+                                        // For web, try to get content height to resize
+                                        if (!isMobile) {
+                                            try {
+                                                const h = e.currentTarget.contentDocument?.body.scrollHeight;
+                                                if(h && h > maxHeight) setMaxHeight(h);
+                                            } catch(err) {}
+                                        }
+                                    }}
+                                />
+                             </div>
+                         ))}
                     </div>
                 )}
              </div>
         ) : activeTab === 'preview' ? (
-          <div className="flex-grow relative overflow-hidden flex items-center justify-center bg-gray-100 p-4">
-            {/* Background pattern */}
-            <div 
+          <div className="flex-grow relative overflow-hidden flex items-center justify-center bg-gray-100 p-4 overflow-x-auto">
+             {/* Background pattern */}
+             <div 
               className="absolute inset-0 opacity-[0.03] pointer-events-none"
               style={{
                 backgroundImage: 'radial-gradient(circle at 1px 1px, #000 1px, transparent 0)',
                 backgroundSize: '20px 20px',
               }}
             />
-            
-            {/* Loading State Overlay for Preview */}
-            {isLoading && (
-               <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                  <p className="text-gray-500 font-medium animate-pulse">Generating your UI...</p>
-               </div>
-            )}
 
-            {code && !isLoading ? (
-              <div 
-                className={`
-                  transition-all duration-500 ease-in-out bg-white shadow-xl relative
-                  ${viewMode === 'desktop' ? 'w-full h-full shadow-none' : ''}
-                  ${viewMode === 'tablet' ? 'w-[768px] max-w-full h-[95%]' : ''}
-                  ${viewMode === 'mobile' ? 'w-[375px] max-w-full h-full max-h-[844px]' : ''}
-                `}
-              >
-                <iframe
-                  srcDoc={code}
-                  title="Preview"
-                  className="w-full h-full bg-white"
-                  sandbox="allow-scripts"
-                />
-              </div>
-            ) : (
-              !isLoading && (
-                <div className="text-center text-gray-400 p-4">
-                  <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200/50 mb-4">
-                    <DesktopIcon />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-700">Ready to preview</h3>
-                  <p className="mt-2 text-xs sm:text-sm text-gray-500 max-w-sm mx-auto">
-                    Generate some UI code to see it rendered here. Switch between device sizes using the toolbar.
-                  </p>
-                </div>
-              )
-            )}
+            <div className="flex gap-8 py-8 px-4 h-full items-center overflow-x-auto w-full justify-center">
+                 {files.map((file, idx) => (
+                     <div 
+                        key={idx}
+                        className={`
+                        transition-all duration-500 ease-in-out bg-white shadow-xl flex-shrink-0 flex flex-col
+                        ${viewMode === 'desktop' ? 'w-full h-full shadow-none' : ''}
+                        ${viewMode === 'tablet' ? 'w-[768px] h-[95%]' : ''}
+                        ${viewMode === 'mobile' ? 'w-[375px] h-full max-h-[844px]' : ''}
+                        `}
+                    >
+                        {files.length > 1 && (
+                             <div className="w-full bg-gray-50 border-b text-xs text-center py-1 text-gray-500 font-mono">
+                                {file.name}
+                            </div>
+                        )}
+                        <iframe
+                        srcDoc={file.content}
+                        title={file.name}
+                        className="w-full h-full bg-white flex-1"
+                        sandbox="allow-scripts"
+                        />
+                    </div>
+                 ))}
+            </div>
+            
              {error && !isLoading && (
                 <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/90 p-8">
                     <div className="text-red-500 text-center max-w-lg bg-red-50 p-6 rounded-xl border border-red-100">
@@ -385,7 +381,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ code, isLoading, e
           </div>
         ) : (
           <div className="flex-grow flex flex-col min-h-0">
-            <CodeDisplay code={code} error={error} isLoading={isLoading} />
+            <CodeDisplay files={files} error={error} isLoading={isLoading} />
           </div>
         )}
       </div>

@@ -1,25 +1,26 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MagicWandIcon } from '../constants';
 
 interface PromptInputProps {
   prompt: string;
   setPrompt: (prompt: string) => void;
-  onGenerate: () => void;
+  onGenerate: (platform: 'web' | 'mobile') => void;
   isLoading: boolean;
 }
 
 export const PromptInput: React.FC<PromptInputProps> = ({ prompt, setPrompt, onGenerate, isLoading }) => {
-  
+  const [platform, setPlatform] = useState<'web' | 'mobile'>('web');
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      onGenerate();
+      onGenerate(platform);
     }
   };
 
   return (
-    <div className="flex flex-col gap-3 w-full">
+    <div className="flex flex-col gap-0 w-full bg-white rounded-2xl shadow-xl shadow-blue-900/5 border border-gray-100 overflow-hidden">
       <div className="relative">
         <textarea
           id="prompt-textarea"
@@ -27,21 +28,40 @@ export const PromptInput: React.FC<PromptInputProps> = ({ prompt, setPrompt, onG
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Describe your app idea... (e.g., 'A dashboard for a coffee shop with sales charts and inventory list')"
-          className="w-full h-32 p-4 bg-transparent text-lg resize-none focus:outline-none text-gray-900 placeholder-gray-400"
+          className="w-full h-32 p-5 bg-transparent text-lg resize-none focus:outline-none text-gray-900 placeholder-gray-400"
           disabled={isLoading}
         />
-        <div className="absolute bottom-3 right-3">
+        <div className="absolute bottom-3 right-3 hidden sm:block">
              <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                ⌘ + Enter to generate
+                ⌘ + Enter
              </span>
         </div>
       </div>
       
-      <div className="border-t border-gray-100 p-3 bg-gray-50/50 rounded-b-2xl flex justify-end">
+      <div className="border-t border-gray-100 p-3 bg-gray-50/50 flex flex-col sm:flex-row gap-4 sm:gap-0 justify-between items-center">
+        
+        {/* Config Controls */}
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="flex bg-gray-200 p-1 rounded-lg">
+                <button 
+                    onClick={() => setPlatform('web')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${platform === 'web' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                >
+                    Web
+                </button>
+                <button 
+                    onClick={() => setPlatform('mobile')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${platform === 'mobile' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                >
+                    Mobile
+                </button>
+            </div>
+        </div>
+
         <button
-          onClick={onGenerate}
+          onClick={() => onGenerate(platform)}
           disabled={isLoading || !prompt.trim()}
-          className="flex items-center justify-center px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all duration-200 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform active:scale-95"
+          className="w-full sm:w-auto flex items-center justify-center px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all duration-200 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform active:scale-95"
         >
           {isLoading ? (
             <>

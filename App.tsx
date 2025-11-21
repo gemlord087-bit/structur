@@ -1,10 +1,11 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { PreviewWindow } from './components/PreviewWindow';
 import { ChatInterface } from './components/ChatInterface';
 import { generateUI, refineUI } from './services/geminiService';
-import { DEFAULT_CODE } from './constants';
+import { loadProjects, saveProject, deleteProject } from './services/db';
+import { DEFAULT_FILES } from './constants';
 import { Project, View, Message } from './types';
 
 const App: React.FC = () => {
@@ -20,9 +21,10 @@ const App: React.FC = () => {
   const defaultProject: Project = {
     id: 'default',
     name: 'Sunnydale Elementary',
+    platform: 'web',
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    code: DEFAULT_CODE,
+    files: DEFAULT_FILES,
     messages: []
   };
 
@@ -31,31 +33,57 @@ const App: React.FC = () => {
   // Helper to get current project
   const activeProject = projects.find(p => p.id === activeProjectId) || null;
 
+  // Load projects from DB on mount
+  useEffect(() => {
+      const fetchProjects = async () => {
+          try {
+              const savedProjects = await loadProjects();
+              if (savedProjects.length > 0) {
+                  // Check if default project exists in DB, if not, add it (or keep memory one if DB empty)
+                  const hasDefault = savedProjects.some(p => p.id === 'default');
+                  if (hasDefault) {
+                      setProjects(savedProjects);
+                  } else {
+                      setProjects([defaultProject, ...savedProjects]);
+                  }
+              } else {
+                  // Save default project to DB first time
+                  await saveProject(defaultProject);
+              }
+          } catch (err) {
+              console.error("Failed to load projects from DB", err);
+          }
+      };
+      fetchProjects();
+  }, []);
+
   // --- Actions ---
 
   // 1. Generate New Project (From Dashboard)
-  const handleGenerateNew = useCallback(async () => {
+  const handleGenerateNew = useCallback(async (platform: 'web' | 'mobile') => {
     if (!prompt.trim()) return;
 
     setIsGenerating(true);
     setError(null);
 
     try {
-      const code = await generateUI(prompt);
+      const data = await generateUI(prompt, platform);
       
       const newProject: Project = {
         id: crypto.randomUUID(),
-        name: prompt.split(' ').slice(0, 4).join(' ') || 'Untitled Project', // Simple name generation
+        name: `New ${platform === 'web' ? 'Web' : 'Mobile'} Project`, // Default name
+        platform: platform,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        code: code,
+        files: data.files,
         messages: []
       };
 
+      // Save to DB and State
+      await saveProject(newProject);
       setProjects(prev => [newProject, ...prev]);
+      
       setPrompt(''); // Clear dashboard input
-      // Optional: Automatically open the project? The prompt said "show the project below".
-      // We will keep view as dashboard but the new project will appear in the list.
     } catch (err: any) {
       console.error(err);
       alert('Failed to generate project. Please try again.');
@@ -84,12 +112,31 @@ const App: React.FC = () => {
       messages: [...activeProject.messages, userMsg]
     };
 
-    // Optimistic update for UI to show user message
+    // Optimistic update
     setProjects(prev => prev.map(p => p.id === activeProject.id ? updatedProjectState : p));
+    // Background save optimistic state
+    saveProject(updatedProjectState).catch(console.error);
 
     try {
-      // Call API to refine code
-      const refinedCode = await refineUI(activeProject.code, messageContent);
+      // Call API to refine code (intelligent handling of multiple files)
+      const updatedFiles = await refineUI(activeProject.files, messageContent);
+
+      // Merge logic: Update existing files, add new ones
+      // Create a map of new files for easy lookup
+      const newFilesMap = new Map(updatedFiles.map(f => [f.name, f]));
+      
+      // Start with existing files
+      const mergedFiles = activeProject.files.map(f => {
+          if (newFilesMap.has(f.name)) {
+              const updated = newFilesMap.get(f.name)!;
+              newFilesMap.delete(f.name); // Remove so we know it's processed
+              return updated;
+          }
+          return f;
+      });
+
+      // Add any remaining new files that weren't in the original list
+      const finalFiles = [...mergedFiles, ...Array.from(newFilesMap.values())];
 
       const assistantMsg: Message = {
         id: crypto.randomUUID(),
@@ -98,18 +145,23 @@ const App: React.FC = () => {
         timestamp: Date.now()
       };
 
+      const finalProjectState = {
+        ...updatedProjectState,
+        files: finalFiles,
+        updatedAt: Date.now(),
+        messages: [...updatedProjectState.messages, assistantMsg]
+      };
+
       // Update project with new code and assistant response
       setProjects(prev => prev.map(p => {
         if (p.id === activeProject.id) {
-          return {
-            ...p,
-            code: refinedCode,
-            updatedAt: Date.now(),
-            messages: [...updatedProjectState.messages, assistantMsg]
-          };
+          return finalProjectState;
         }
         return p;
       }));
+
+      // Save final state to DB
+      await saveProject(finalProjectState);
 
     } catch (err: any) {
       setError(err.message || 'Failed to refine design');
@@ -120,15 +172,20 @@ const App: React.FC = () => {
         content: 'Sorry, I encountered an error while trying to update the design.',
         timestamp: Date.now()
       };
+      
+      const errorProjectState = {
+          ...updatedProjectState,
+           messages: [...updatedProjectState.messages, errorMsg]
+      };
+
       setProjects(prev => prev.map(p => {
         if (p.id === activeProject.id) {
-          return {
-             ...p,
-             messages: [...updatedProjectState.messages, errorMsg]
-          };
+          return errorProjectState;
         }
         return p;
       }));
+      
+      saveProject(errorProjectState).catch(console.error);
     } finally {
       setIsRefining(false);
     }
@@ -182,8 +239,9 @@ const App: React.FC = () => {
         <div className="md:col-span-9 lg:col-span-9 h-[60vh] md:h-full relative min-h-0">
            {activeProject && (
              <PreviewWindow 
-                code={activeProject.code}
-                isLoading={isRefining} // Show loading overlay on preview when refining
+                files={activeProject.files}
+                platform={activeProject.platform}
+                isLoading={isRefining} // Passed as non-blocking indicator
                 error={error}
              />
            )}

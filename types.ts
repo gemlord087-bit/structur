@@ -6,14 +6,19 @@ export interface Message {
   timestamp: number;
 }
 
+export interface GeneratedFile {
+  name: string; // e.g., 'index.html', 'profile.html'
+  content: string;
+}
+
 export interface Project {
   id: string;
   name: string;
+  platform: 'web' | 'mobile';
   createdAt: number;
   updatedAt: number;
-  code: string;
+  files: GeneratedFile[];
   messages: Message[];
-  previewUrl?: string; // For future use with thumbnail generation
 }
 
 export type View = 'dashboard' | 'project';

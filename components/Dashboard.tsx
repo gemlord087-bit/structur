@@ -8,7 +8,7 @@ import { LogoIcon } from '../constants';
 interface DashboardProps {
   prompt: string;
   setPrompt: (prompt: string) => void;
-  onGenerate: () => void;
+  onGenerate: (platform: 'web' | 'mobile') => void;
   isGenerating: boolean;
   projects: Project[];
   onOpenProject: (project: Project) => void;
