@@ -58,6 +58,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [activeDesignIndex, setActiveDesignIndex] = useState<number | null>(null);
   const dragStart = useRef({ x: 0, y: 0 });
   
   // We track the max height of all screens to fit them
@@ -120,7 +121,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
   }, [activeTab, platform, files.length]);
 
   // --- Helper to fix h-screen in canvas mode ---
-  const prepareCanvasContent = (content: string) => {
+  const prepareCanvasContent = (content: string, isActive: boolean) => {
       const isMobile = platform === 'mobile';
       // Use a fixed pixel height instead of 100vh to prevent iframe expansion issues
       const fallbackHeight = isMobile ? 'min-h-[812px]' : 'min-h-[900px]';
@@ -130,11 +131,14 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
       modified = modified.replace(/min-h-screen/g, fallbackHeight);
       modified = modified.replace(/h-\[100vh\]/g, fallbackHeight);
 
+      // If not active, disable pointer events to make it act like a screenshot
+      const pointerEvents = isActive ? 'auto' : 'none';
+
       // Inject style to hide scrollbars and ensure body takes height
       const styleInjection = `
         <style>
             ::-webkit-scrollbar { display: none; }
-            body { overflow: hidden; pointer-events: none; user-select: none; }
+            body { overflow: ${isActive ? 'auto' : 'hidden'}; pointer-events: ${pointerEvents}; user-select: none; }
             html, body { min-height: 100%; height: auto; }
         </style>
       `;
@@ -146,9 +150,13 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
 
   const handleMouseDown = (e: React.MouseEvent) => {
       if (activeTab !== 'canvas') return;
-      e.preventDefault();
-      setIsDragging(true);
-      dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+      // If clicking on background (not a design), start dragging
+      if (e.target === containerRef.current || e.target === e.currentTarget) {
+           e.preventDefault();
+           setIsDragging(true);
+           setActiveDesignIndex(null); // Deselect designs
+           dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+      }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -174,6 +182,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
           const newZoom = Math.max(0.1, Math.min(5, zoom + delta));
           setZoom(newZoom);
       } else {
+          // Only pan if not scrolling inside an active iframe (though wheel events usually don't bubble out of iframe easily)
           setPan(prev => ({
               x: prev.x - e.deltaX,
               y: prev.y - e.deltaY
@@ -327,37 +336,51 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
                         }}
                         className="absolute top-0 left-0 transition-transform duration-75 will-change-transform p-10"
                     >
-                         {files.map((file, idx) => (
-                             <div 
-                                key={idx}
-                                style={{
-                                    width: isMobile ? '375px' : '1280px',
-                                    height: isMobile ? '812px' : `${maxHeight}px`, 
-                                }}
-                                className="bg-white shadow-2xl overflow-hidden flex-shrink-0 pointer-events-none select-none relative"
-                             >
-                                <iframe
-                                    srcDoc={prepareCanvasContent(file.content)}
-                                    title={file.name}
-                                    className="w-full h-full border-0 block bg-white"
-                                    scrolling="no"
-                                    onLoad={(e) => {
-                                        if (!isMobile) {
-                                            try {
-                                                // Add some buffer to calculated height to avoid cutting off fixed elements
-                                                const h = e.currentTarget.contentDocument?.body.scrollHeight;
-                                                if(h && h > maxHeight) setMaxHeight(h + 100);
-                                            } catch(err) {}
-                                        }
+                         {files.map((file, idx) => {
+                             const isActive = activeDesignIndex === idx;
+                             return (
+                                <div 
+                                    key={idx}
+                                    style={{
+                                        width: isMobile ? '375px' : '1280px',
+                                        height: isMobile ? '812px' : `${maxHeight}px`, 
                                     }}
-                                />
-                             </div>
-                         ))}
+                                    className={`bg-white shadow-2xl overflow-hidden flex-shrink-0 select-none relative transition-all duration-200 ${
+                                        isActive ? 'ring-4 ring-blue-500/50' : 'hover:ring-2 hover:ring-gray-300'
+                                    }`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveDesignIndex(idx);
+                                    }}
+                                >
+                                    {/* Overlay to capture click when not active (prevents interaction until active) */}
+                                    {!isActive && (
+                                        <div className="absolute inset-0 z-10 bg-transparent cursor-pointer" />
+                                    )}
+                                    
+                                    <iframe
+                                        srcDoc={prepareCanvasContent(file.content, isActive)}
+                                        title={file.name}
+                                        className="w-full h-full border-0 block bg-white"
+                                        scrolling={isActive ? 'auto' : 'no'}
+                                        onLoad={(e) => {
+                                            if (!isMobile) {
+                                                try {
+                                                    // Add some buffer to calculated height to avoid cutting off fixed elements
+                                                    const h = e.currentTarget.contentDocument?.body.scrollHeight;
+                                                    if(h && h > maxHeight) setMaxHeight(h + 100);
+                                                } catch(err) {}
+                                            }
+                                        }}
+                                    />
+                                </div>
+                             );
+                         })}
                     </div>
                 )}
              </div>
         ) : activeTab === 'preview' ? (
-          <div className="flex-grow relative overflow-hidden flex items-center justify-center bg-gray-100 p-4 overflow-x-auto">
+          <div className="flex-grow relative bg-gray-100 overflow-hidden">
              {/* Background pattern */}
              <div 
               className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -367,30 +390,28 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
               }}
             />
 
-            <div className="flex gap-8 py-8 px-4 h-full items-center overflow-x-auto w-full justify-center">
-                 {files.map((file, idx) => (
-                     <div 
-                        key={idx}
-                        className={`
-                        transition-all duration-500 ease-in-out bg-white shadow-xl flex-shrink-0 flex flex-col
-                        ${viewMode === 'desktop' ? 'w-full h-full shadow-none' : ''}
-                        ${viewMode === 'tablet' ? 'w-[768px] h-[95%]' : ''}
-                        ${viewMode === 'mobile' ? 'w-[375px] h-full max-h-[844px]' : ''}
-                        `}
-                    >
-                        {files.length > 1 && (
-                             <div className="w-full bg-gray-50 border-b text-xs text-center py-1 text-gray-500 font-mono">
-                                {file.name}
-                            </div>
-                        )}
-                        <iframe
-                        srcDoc={file.content}
-                        title={file.name}
-                        className="w-full h-full bg-white flex-1"
-                        sandbox="allow-scripts"
-                        />
-                    </div>
-                 ))}
+            {/* Scroll Container - Use flex layout with margin:auto on children to safely center content while allowing scroll */}
+            <div className="absolute inset-0 overflow-x-auto overflow-y-hidden flex">
+                 <div className="flex gap-10 m-auto px-10 py-10 h-full items-center">
+                     {files.map((file, idx) => (
+                         <div 
+                            key={idx}
+                            className={`
+                            transition-all duration-500 ease-in-out bg-white shadow-xl flex-shrink-0 flex flex-col overflow-hidden
+                            ${viewMode === 'desktop' ? 'w-[calc(100vw-20rem)] md:w-[1280px] h-full shadow-none rounded-none border border-gray-200' : 'rounded-2xl shadow-2xl border border-gray-100'}
+                            ${viewMode === 'tablet' ? 'w-[768px] h-[95%]' : ''}
+                            ${viewMode === 'mobile' ? 'w-[375px] h-full max-h-[844px]' : ''}
+                            `}
+                        >
+                            <iframe
+                            srcDoc={file.content}
+                            title={file.name}
+                            className="w-full h-full bg-white flex-1"
+                            sandbox="allow-scripts"
+                            />
+                        </div>
+                     ))}
+                 </div>
             </div>
             
              {error && !isLoading && (
@@ -411,3 +432,4 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
     </div>
   );
 };
+    
