@@ -61,13 +61,15 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
   const dragStart = useRef({ x: 0, y: 0 });
   
   // We track the max height of all screens to fit them
-  const [maxHeight, setMaxHeight] = useState(1080);
+  const [maxHeight, setMaxHeight] = useState(platform === 'mobile' ? 812 : 1080);
 
   useEffect(() => {
     if (platform === 'mobile') {
         setViewMode('mobile');
+        setMaxHeight(812);
     } else {
         setViewMode('desktop');
+        setMaxHeight(1080);
     }
   }, [platform]);
 
@@ -78,7 +80,7 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
         
         const isMobile = platform === 'mobile';
         const screenWidth = isMobile ? 375 : 1280;
-        const screenHeight = maxHeight || (isMobile ? 800 : 1080);
+        const screenHeight = maxHeight;
         const gap = 40;
         
         const contentW = isMobile 
@@ -115,27 +117,24 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
           // Small delay to let heights render
           setTimeout(fitToScreen, 100);
       }
-  }, [activeTab, platform]);
+  }, [activeTab, platform, files.length]);
 
   // --- Helper to fix h-screen in canvas mode ---
-  // Since the iframe expands to full height, h-screen would make the hero section huge.
-  // We replace h-screen with a fixed pixel height suitable for the platform.
   const prepareCanvasContent = (content: string) => {
       const isMobile = platform === 'mobile';
-      const fallbackHeight = isMobile ? 'min-h-[800px]' : 'min-h-[900px]';
+      // Use a fixed pixel height instead of 100vh to prevent iframe expansion issues
+      const fallbackHeight = isMobile ? 'min-h-[812px]' : 'min-h-[900px]';
       
       // Replace h-screen with a fixed min-height
       let modified = content.replace(/h-screen/g, fallbackHeight);
-      
-      // Also replace arbitrary vh units with px if possible (simple regex)
-      // This is a basic heuristic
+      modified = modified.replace(/min-h-screen/g, fallbackHeight);
       modified = modified.replace(/h-\[100vh\]/g, fallbackHeight);
 
       // Inject style to hide scrollbars and ensure body takes height
       const styleInjection = `
         <style>
             ::-webkit-scrollbar { display: none; }
-            body { overflow: hidden; }
+            body { overflow: hidden; pointer-events: none; user-select: none; }
             html, body { min-height: 100%; height: auto; }
         </style>
       `;
@@ -270,7 +269,6 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
 
         {/* Right spacer */}
         <div className="hidden md:block w-[120px]">
-             {/* Show loading indicator here nicely */}
              {isLoading && (
                  <div className="flex items-center justify-end gap-2 text-xs text-blue-600 animate-pulse font-medium">
                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
@@ -336,20 +334,19 @@ export const PreviewWindow: React.FC<PreviewWindowProps> = ({ files, isLoading, 
                                     width: isMobile ? '375px' : '1280px',
                                     height: isMobile ? '812px' : `${maxHeight}px`, 
                                 }}
-                                className="bg-white shadow-2xl overflow-hidden flex-shrink-0 pointer-events-none select-none"
+                                className="bg-white shadow-2xl overflow-hidden flex-shrink-0 pointer-events-none select-none relative"
                              >
-                                {/* Removed header with filename as requested */}
                                 <iframe
                                     srcDoc={prepareCanvasContent(file.content)}
                                     title={file.name}
-                                    className="w-full h-full border-0 block"
+                                    className="w-full h-full border-0 block bg-white"
                                     scrolling="no"
                                     onLoad={(e) => {
-                                        // For web, try to get content height to resize
                                         if (!isMobile) {
                                             try {
+                                                // Add some buffer to calculated height to avoid cutting off fixed elements
                                                 const h = e.currentTarget.contentDocument?.body.scrollHeight;
-                                                if(h && h > maxHeight) setMaxHeight(h);
+                                                if(h && h > maxHeight) setMaxHeight(h + 100);
                                             } catch(err) {}
                                         }
                                     }}

@@ -67,11 +67,12 @@ const App: React.FC = () => {
     setError(null);
 
     try {
+      // Simplified generation: 1 screen default, raw text response
       const data = await generateUI(prompt, platform);
       
       const newProject: Project = {
         id: crypto.randomUUID(),
-        name: `New ${platform === 'web' ? 'Web' : 'Mobile'} Project`, // Default name
+        name: `New ${platform === 'web' ? 'Web' : 'Mobile'} Project`, // Default naming
         platform: platform,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -118,18 +119,20 @@ const App: React.FC = () => {
     saveProject(updatedProjectState).catch(console.error);
 
     try {
-      // Call API to refine code (intelligent handling of multiple files)
-      const updatedFiles = await refineUI(activeProject.files, messageContent);
+      // Call API to refine code (intelligent handling of multiple files + summary)
+      const { files: updatedFiles, summary } = await refineUI(
+          activeProject.files, 
+          messageContent,
+          activeProject.platform
+      );
 
       // Merge logic: Update existing files, add new ones
-      // Create a map of new files for easy lookup
       const newFilesMap = new Map(updatedFiles.map(f => [f.name, f]));
       
-      // Start with existing files
       const mergedFiles = activeProject.files.map(f => {
           if (newFilesMap.has(f.name)) {
               const updated = newFilesMap.get(f.name)!;
-              newFilesMap.delete(f.name); // Remove so we know it's processed
+              newFilesMap.delete(f.name); 
               return updated;
           }
           return f;
@@ -141,7 +144,7 @@ const App: React.FC = () => {
       const assistantMsg: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: 'I have updated the design based on your request.',
+        content: summary || 'I have updated the design based on your request.',
         timestamp: Date.now()
       };
 
@@ -241,7 +244,7 @@ const App: React.FC = () => {
              <PreviewWindow 
                 files={activeProject.files}
                 platform={activeProject.platform}
-                isLoading={isRefining} // Passed as non-blocking indicator
+                isLoading={isRefining} 
                 error={error}
              />
            )}
