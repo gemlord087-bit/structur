@@ -1,14 +1,11 @@
-
 import React, { useState } from 'react';
-import { LogoIcon, MagicWandIcon } from '../constants';
+import { LogoIcon, MagicWandIcon } from '@/lib/constants';
 
 interface LandingPageProps {
   onGetStarted: (initialPrompt?: string) => void;
-  onViewPrivacy: () => void;
-  onViewTerms: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPrivacy, onViewTerms }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const [heroPrompt, setHeroPrompt] = useState('');
 
   const handleHeroSubmit = (e: React.FormEvent) => {
@@ -51,9 +48,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPr
       {/* Hero Section */}
       <section className="pt-32 pb-20 md:pt-40 md:pb-24 overflow-hidden relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
-            <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl mix-blend-multiply animate-blob"></div>
-            <div className="absolute top-20 right-20 w-72 h-72 bg-purple-400/10 rounded-full blur-3xl mix-blend-multiply animate-blob animation-delay-2000"></div>
-            <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-pink-400/10 rounded-full blur-3xl mix-blend-multiply animate-blob animation-delay-4000"></div>
+            <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl mix-blend-multiply animate-pulse"></div>
+            <div className="absolute top-20 right-20 w-72 h-72 bg-purple-400/10 rounded-full blur-3xl mix-blend-multiply animate-pulse"></div>
+            <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-pink-400/10 rounded-full blur-3xl mix-blend-multiply animate-pulse"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
@@ -240,8 +237,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPr
                </div>
                
                <div className="flex gap-8 text-sm font-medium text-gray-600">
-                  <button onClick={onViewPrivacy} className="hover:text-blue-600 transition-colors">Privacy Policy</button>
-                  <button onClick={onViewTerms} className="hover:text-blue-600 transition-colors">Terms of Service</button>
+                  <button className="hover:text-blue-600 transition-colors">Privacy Policy</button>
+                  <button className="hover:text-blue-600 transition-colors">Terms of Service</button>
                </div>
 
                <div className="text-sm text-gray-500">
