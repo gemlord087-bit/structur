@@ -4,41 +4,34 @@ import React from 'react';
 import { PromptInput } from './prompt-input';
 import { ProjectCard } from './project-card';
 import { Project } from '@/lib/types';
-import { LogoIcon } from '@/lib/constants';
 
 interface DashboardProps {
-  prompt: string;
-  setPrompt: (prompt: string) => void;
-  onGenerate: (platform: 'web' | 'mobile') => void;
-  isGenerating: boolean;
   projects: Project[];
-  onOpenProject: (project: Project) => void;
+  activeProjectId: string | null;
+  onProjectSelect: (projectId: string) => void;
+  onDeleteProject: (projectId: string) => void;
+  onGenerate: (platform: 'web' | 'mobile') => void;
+  prompt: string;
+  onPromptChange: (prompt: string) => void;
+  isGenerating: boolean;
+  error: string | null;
+  onClearError: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
-  prompt, 
-  setPrompt, 
-  onGenerate, 
-  isGenerating, 
-  projects, 
-  onOpenProject 
+  projects,
+  activeProjectId,
+  onProjectSelect,
+  onDeleteProject,
+  onGenerate,
+  prompt,
+  onPromptChange,
+  isGenerating,
+  error,
+  onClearError
 }) => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-           <div className="flex items-center gap-2">
-              <LogoIcon />
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Stitch AI</h1>
-           </div>
-           <div className="flex items-center gap-4">
-               {/* Placeholder for future user profile or settings */}
-               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600"></div>
-           </div>
-        </div>
-      </header>
-
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8">
         
         {/* Hero / Input Section */}
@@ -54,7 +47,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
            <PromptInput
              prompt={prompt}
-             setPrompt={setPrompt}
+             setPrompt={onPromptChange}
              onGenerate={onGenerate}
              isGenerating={isGenerating}
            />
@@ -73,7 +66,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <ProjectCard
                   key={project.id}
                   project={project}
-                  onOpen={() => onOpenProject(project)}
+                  onOpen={() => onProjectSelect(project.id)}
+                  onDelete={() => onDeleteProject(project.id)}
+                  isActive={project.id === activeProjectId}
                 />
               ))}
             </div>
@@ -93,6 +88,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         )}
       </main>
+
+      {/* Error Display */}
+      {error && (
+        <div className="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg max-w-md">
+          <div className="flex items-center justify-between">
+            <span className="text-sm">{error}</span>
+            <button
+              onClick={onClearError}
+              className="ml-4 text-red-500 hover:text-red-700 font-bold text-lg"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

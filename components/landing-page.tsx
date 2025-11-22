@@ -1,20 +1,25 @@
+'use client';
+
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { LogoIcon, MagicWandIcon } from '@/lib/constants';
 
-interface LandingPageProps {
-  onGetStarted: (initialPrompt?: string) => void;
-}
-
-export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
+export const LandingPage: React.FC = () => {
+  const router = useRouter();
   const [heroPrompt, setHeroPrompt] = useState('');
 
   const handleHeroSubmit = (e: React.FormEvent) => {
       e.preventDefault();
+      // Store the prompt in sessionStorage and navigate to dashboard
       if (heroPrompt.trim()) {
-          onGetStarted(heroPrompt);
-      } else {
-          onGetStarted();
+          sessionStorage.setItem('initialPrompt', heroPrompt);
       }
+      router.push('/dashboard');
+  };
+
+  const handleGetStarted = () => {
+      router.push('/dashboard');
   };
 
   return (
@@ -23,19 +28,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => onGetStarted()}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={handleGetStarted}>
               <LogoIcon />
               <span className="text-xl font-bold tracking-tight">Stitch AI</span>
             </div>
             <div className="flex items-center gap-6">
               <button 
-                onClick={() => onGetStarted()}
+                onClick={handleGetStarted}
                 className="hidden sm:block text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
               >
                 Sign In
               </button>
               <button 
-                onClick={() => onGetStarted()}
+                onClick={handleGetStarted}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 Get Started
@@ -218,7 +223,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
            <div className="text-center">
                 <button 
-                onClick={() => onGetStarted()}
+                onClick={handleGetStarted}
                 className="px-10 py-4 bg-gray-900 text-white text-lg font-bold rounded-xl hover:bg-black transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                 Generate UI Now
@@ -237,8 +242,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                </div>
                
                <div className="flex gap-8 text-sm font-medium text-gray-600">
-                  <button className="hover:text-blue-600 transition-colors">Privacy Policy</button>
-                  <button className="hover:text-blue-600 transition-colors">Terms of Service</button>
+                  <Link href="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
+                  <Link href="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</Link>
                </div>
 
                <div className="text-sm text-gray-500">
