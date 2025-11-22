@@ -1,6 +1,5 @@
-
 import { GoogleGenAI } from "@google/genai";
-import { GeneratedFile } from "../types";
+import { GeneratedFile } from "./types";
 
 interface GenerationResponse {
   files: GeneratedFile[];
@@ -63,7 +62,7 @@ const parseResponse = (text: string): GenerationResponse => {
   const projectName = nameMatch ? nameMatch[1].trim() : undefined;
 
   // Extract Summary if present
-  const summaryRegex = /<!-- summary: (.*?) -->/s;
+  const summaryRegex = /<!-- summary: (.*?) -->/;
   const summaryMatch = cleanedCode.match(summaryRegex);
   const summary = summaryMatch ? summaryMatch[1].trim() : undefined;
 
@@ -95,12 +94,13 @@ const parseResponse = (text: string): GenerationResponse => {
 };
 
 export const generateUI = async (prompt: string, platform: 'web' | 'mobile'): Promise<GenerationResponse> => {
-  if (!process.env.API_KEY) {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
     throw new Error("API_KEY environment variable not set");
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
 
     const platformInstruction = platform === 'mobile' ? MOBILE_RULES : WEB_RULES;
 
@@ -135,12 +135,13 @@ export const generateUI = async (prompt: string, platform: 'web' | 'mobile'): Pr
 };
 
 export const refineUI = async (currentFiles: GeneratedFile[], userPrompt: string, platform: 'web' | 'mobile'): Promise<GenerationResponse> => {
-  if (!process.env.API_KEY) {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
     throw new Error("API_KEY environment variable not set");
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
 
     // Create a context string of existing files
     const filesContext = currentFiles.map(f => `

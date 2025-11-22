@@ -1,23 +1,25 @@
+'use client';
 
 import React, { useState } from 'react';
-import { LogoIcon, MagicWandIcon } from '../constants';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { LogoIcon, MagicWandIcon } from '@/lib/constants';
 
-interface LandingPageProps {
-  onGetStarted: (initialPrompt?: string) => void;
-  onViewPrivacy: () => void;
-  onViewTerms: () => void;
-}
-
-export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPrivacy, onViewTerms }) => {
+export const LandingPage: React.FC = () => {
+  const router = useRouter();
   const [heroPrompt, setHeroPrompt] = useState('');
 
   const handleHeroSubmit = (e: React.FormEvent) => {
       e.preventDefault();
+      // Store the prompt in sessionStorage and navigate to dashboard
       if (heroPrompt.trim()) {
-          onGetStarted(heroPrompt);
-      } else {
-          onGetStarted();
+          sessionStorage.setItem('initialPrompt', heroPrompt);
       }
+      router.push('/dashboard');
+  };
+
+  const handleGetStarted = () => {
+      router.push('/dashboard');
   };
 
   return (
@@ -26,19 +28,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPr
       <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => onGetStarted()}>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={handleGetStarted}>
               <LogoIcon />
               <span className="text-xl font-bold tracking-tight">Stitch AI</span>
             </div>
             <div className="flex items-center gap-6">
               <button 
-                onClick={() => onGetStarted()}
+                onClick={handleGetStarted}
                 className="hidden sm:block text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
               >
                 Sign In
               </button>
               <button 
-                onClick={() => onGetStarted()}
+                onClick={handleGetStarted}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 Get Started
@@ -51,9 +53,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPr
       {/* Hero Section */}
       <section className="pt-32 pb-20 md:pt-40 md:pb-24 overflow-hidden relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
-            <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl mix-blend-multiply animate-blob"></div>
-            <div className="absolute top-20 right-20 w-72 h-72 bg-purple-400/10 rounded-full blur-3xl mix-blend-multiply animate-blob animation-delay-2000"></div>
-            <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-pink-400/10 rounded-full blur-3xl mix-blend-multiply animate-blob animation-delay-4000"></div>
+            <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl mix-blend-multiply animate-pulse"></div>
+            <div className="absolute top-20 right-20 w-72 h-72 bg-purple-400/10 rounded-full blur-3xl mix-blend-multiply animate-pulse"></div>
+            <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-pink-400/10 rounded-full blur-3xl mix-blend-multiply animate-pulse"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
@@ -221,7 +223,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPr
 
            <div className="text-center">
                 <button 
-                onClick={() => onGetStarted()}
+                onClick={handleGetStarted}
                 className="px-10 py-4 bg-gray-900 text-white text-lg font-bold rounded-xl hover:bg-black transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                 Generate UI Now
@@ -240,8 +242,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onViewPr
                </div>
                
                <div className="flex gap-8 text-sm font-medium text-gray-600">
-                  <button onClick={onViewPrivacy} className="hover:text-blue-600 transition-colors">Privacy Policy</button>
-                  <button onClick={onViewTerms} className="hover:text-blue-600 transition-colors">Terms of Service</button>
+                  <Link href="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
+                  <Link href="/terms" className="hover:text-blue-600 transition-colors">Terms of Service</Link>
                </div>
 
                <div className="text-sm text-gray-500">

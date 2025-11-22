@@ -1,12 +1,17 @@
+import { Project } from './types';
 
-import { Project } from '../types';
-
+// Client-side IndexedDB functions (for browser storage)
 const DB_NAME = 'StitchAI_DB';
 const STORE_NAME = 'projects';
 const DB_VERSION = 1;
 
 export const initDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') {
+      reject(new Error('IndexedDB is not available on server side'));
+      return;
+    }
+
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = (event) => {

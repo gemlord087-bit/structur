@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { GeneratedFile } from './types';
 
@@ -9,7 +8,6 @@ export const LogoIcon: React.FC = () => (
         <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
 );
-
 
 export const MagicWandIcon: React.FC = () => (
   <svg
